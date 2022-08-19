@@ -1,80 +1,80 @@
-import { Alert, Button, Card, CardContent, Container, Stack, TextField, Typography } from "@mui/material";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../AuthProvider";
+import { isEmail, isFilled } from "../../helpers/Forms";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import loader from "../../images/loader.svg";
+import "../../stylesheets/LoginPage.scss";
 
 function LoginPage() {
-    const [email, setEmail] = React.useState<string>("");
-    const [password, setPassword] = React.useState<string>("");
-    const [error, setError] = React.useState(null);
-    let auth = useAuth();
-    let navigate = useNavigate();
+  const [email, setEmail] = React.useState<string>("");
+  const [password, setPassword] = React.useState<string>("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  let auth = useAuth();
+  let navigate = useNavigate();
 
-    const handleEmailUpdate = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setEmail(event.target.value);
-    };
-
-    const handlePasswordUpdate = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setPassword(event.target.value);
-    };
-
-    const submit = async () => {
-        try {
-            let cred = await auth.signInWithEmail(email, password);
-            if (cred !== null) {
-                navigate("/");
-            }
-        } catch (e: any) {
-            console.log(e);
-            setError(e.toString());
-        }
+  const validate = (): boolean => {
+    if (!isEmail(email)) {
+      setError("Please enter a valid email address.");
+    } else if (!isFilled(password)) {
+      setError("Please fill out all fields.");
+    } else {
+      setError(null);
+      return true;
     }
+    return false;
+  }
 
-    return (
-        <Container sx={{height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"}}>
-            <Typography gutterBottom textAlign="center" variant="h2" component="div">
-                Org Assistant
-            </Typography>
-            <Card sx={{"margin": "auto"}}>
-                <CardContent>
-                    <Typography gutterBottom textAlign="center" variant="h5" component="div">
-                        Login
-                    </Typography>
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        gap={1}
-                        sx={{padding: "16px"}}
-                    >
-                        <TextField 
-                            id="outlined-basic" 
-                            label="Email" 
-                            variant="outlined" 
-                            onChange={handleEmailUpdate} 
-                            autoComplete="email"
-                        />
-                        <TextField 
-                            id="outlined-basic" 
-                            label="Password" 
-                            variant="outlined" 
-                            onChange={handlePasswordUpdate}
-                            type="password"
-                            autoComplete="current-password"
-                        />
-                        <Button variant="contained" onClick={submit}>Login</Button>
-                    </Stack>
-                </CardContent>
-            </Card>
-            {error !== null &&
-                <Alert sx={{margin: "16px"}} variant="outlined" severity="error">
-                    {error}
-                </Alert>
-            }
-            <Typography padding={1} textAlign="center" variant="body1" component="div">
-                Created by Logotology
-            </Typography>
-        </Container>
-    );
+  const handleEmailUpdate = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setEmail(event.target.value);
+  };
+
+  const handlePasswordUpdate = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setPassword(event.target.value);
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!validate())
+      return;
+    setIsLoading(true);
+    try {
+      await auth.signInWithEmail(email, password);
+      navigate("/");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className={"login"}>
+      <h1 className={"heading"}>
+        Org Assistant
+      </h1>
+      <form noValidate className={"login-form"} onSubmit={submit}>
+        <label>
+          Email Address
+          <input type={"email"} placeholder={"enter your email here"} onChange={handleEmailUpdate} />
+        </label>
+        <label>
+          Password
+          <input type={"password"} placeholder={"enter your password here"} onChange={handlePasswordUpdate} />
+        </label>
+        <button type={"submit"} className={isLoading ? "loading" : ""}>
+          Sign In
+          <span className={"icon"}>
+            <FontAwesomeIcon icon={solid("arrow-right-to-bracket")} />
+          </span>
+          <img className={"loader"} src={loader} alt={"Loading..."} />
+        </button>
+        <p className={`error ${error ? "" : "hidden"}`}>{error || "test"}</p>
+      </form>
+    </div>
+  );
 }
 
 export default LoginPage;

@@ -1,38 +1,65 @@
-.App {
-  text-align: center;
+@use "constants";
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;900&display=swap');
+
+body {
+  font-family: constants.$font-family;
+  font-size: constants.$font-size;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+h1 {
+  font-size: constants.$heading-size;
+  font-weight: constants.$extra-bold;
+  margin: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+input[type=text], input[type=email], input[type=password] {
+  padding: 20px;
+  font-family: constants.$font-family;
+  border-radius: constants.$border-radius;
+  border: constants.$border-style;
+  font-weight: constants.$normal-bold;
+  margin: 5px 0;
+  font-size: constants.$font-size;
+  box-shadow: constants.$shadow-style;
+
+  &::placeholder {
+    font-weight: constants.$normal;
+  }
+
+  &:focus {
+    outline: 2px solid constants.$outline-color;
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
+button {
+  padding: 15px;
+  font-family: constants.$font-family;
+  font-size: constants.$font-size;
+  border-radius: constants.$border-radius;
+  color: constants.$font-color;
+  font-weight: constants.$normal-bold;
+  border: none;
+  margin: 5px 0;
+  border: constants.$border-style;
+  cursor: pointer;
 
-.App-link {
-  color: #61dafb;
-}
+  &[type=submit] {
+    background-color: constants.$button-color;
+    border-bottom: constants.$thick-border-style;
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+    &:hover {
+      background-color: constants.$button-hover-color;
+    }
   }
-  to {
-    transform: rotate(360deg);
+}
+
+form {
+  label {
+    display: flex;
+    flex-direction: column;
+    font-weight: constants.$extra-bold;
+    margin: 5px 0;
   }
 }

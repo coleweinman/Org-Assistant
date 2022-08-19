@@ -1,0 +1,33 @@
+@use "sass:color";
+
+$font-family: "Nunito", Helvetica, sans-serif;
+$font-size: 16px;
+$heading-size: 60px;
+$icon-size: 20px;
+
+$normal: 500;
+$normal-bold: 700;
+$extra-bold: 900;
+
+$black: #000000;
+$white: #ffffff;
+$light-blue: #228be6;
+$dark-blue: #1a67a9;
+$yellow: #ffce2b;
+$dark-yellow: #b3921f;
+$light-grey: #dfdfdf;
+$red: #ff4949;
+
+$font-color: $black;
+$accent-font-color: $white;
+$outline-color: $light-blue;
+$button-color: $yellow;
+$button-hover-color: darken($button-color, 10%);
+$error-color: $red;
+
+$shadow-style: inset 0 4px $light-grey;
+$border-style: 2px solid $font-color;
+$thick-border-style: 7px solid $font-color;
+$border-radius: 10px;
+
+$transition: all 0.2s ease;
