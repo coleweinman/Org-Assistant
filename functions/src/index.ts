@@ -25,7 +25,7 @@ export const onCheckInCreate = functions.firestore
       // Get event
       const eventDoc = await checkInDoc.ref.parent.parent!.get();
       const event = eventDoc.data()!;
-      const eventSeasonId = event.seasonId;
+      const eventSeasonId = event.seasonID;
 
       // Update attendee data or create new attendee doc if new
       const attendeeCol = db
