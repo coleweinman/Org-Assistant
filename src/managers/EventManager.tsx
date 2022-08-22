@@ -33,7 +33,9 @@ function getEvent(db: Firestore, orgId: string, eventId: string, secure: boolean
 
 interface OrgEvent {
 	id: string,
-	name: string
+	name: string,
+	newAttendeeCount: number,
+	attendeeCount: number
 }
 
 export { getEvents, getEvent };
