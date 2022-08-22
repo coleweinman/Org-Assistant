@@ -24,14 +24,14 @@ function EventPage(props: EventPageProps) {
         return function cleanup() {
             checkInUnsub();
         };
-    }, [params.orgId, params.eventId]);
+    }, [props.db, params.orgId, params.eventId]);
 
     React.useEffect(() => {
         let eventUnsub: Unsubscribe = getEvent(props.db, params.orgId!, params.eventId!, true, onEventUpdate);
         return function cleanup() {
             eventUnsub();
         };
-    }, [params.orgId, params.eventId]);
+    }, [props.db, params.orgId, params.eventId]);
 
     if (event === null) {
         return (
