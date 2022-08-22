@@ -23,9 +23,16 @@ export const onCheckInCreate = functions.firestore
       const email: string = checkIn.email;
 
       // Get event
-      const eventDoc = await checkInDoc.ref.parent.parent!.get();
+      const eventDoc = await db
+          .collection("orgs")
+          .doc(context.params.orgId)
+          .collection("events")
+          .doc(context.params.eventId)
+          .get();
       const event = eventDoc.data()!;
       const eventSeasonId = event.seasonID;
+      console.log(eventDoc.data());
+      console.log(eventSeasonId);
 
       // Update attendee data or create new attendee doc if new
       const attendeeCol = db
@@ -59,12 +66,16 @@ export const onCheckInCreate = functions.firestore
       updateData.push(FieldValue.increment(1));
       updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
       updateData.push(FieldValue.increment(1));
-
-      await attendeeDocRef.update(updateData);
+      console.log(updateData);
+      await attendeeDocRef.update(
+          updateData[0],
+          updateData[1],
+          ...updateData.slice(2)
+      );
 
       // Update event
       const updateEventData = {
-        "checkInCount": FieldValue.increment(1),
+        "attendeeCount": FieldValue.increment(1),
         "newAttendeeCount": FieldValue.increment(newAttendee ? 1 : 0),
       };
       await eventDoc.ref.update(updateEventData);

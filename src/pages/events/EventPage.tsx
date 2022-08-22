@@ -65,6 +65,8 @@ function EventPage(props: EventPageProps) {
                     </CardContent>
                 </Card>
                 <CheckInTable checkIns={checkIns ?? []} />
+                <Typography>New Attendees: {event.newAttendeeCount}</Typography>
+                <Typography>Attendees: {event.attendeeCount}</Typography>
             </Stack>
         </Container>
     );
