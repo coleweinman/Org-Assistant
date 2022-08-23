@@ -21,6 +21,7 @@ input[type=text], input[type=email], input[type=password] {
   margin: 5px 0;
   font-size: constants.$font-size;
   box-shadow: constants.$shadow-style;
+  background-color: constants.$accent-background;
 
   &::placeholder {
     font-weight: constants.$normal;

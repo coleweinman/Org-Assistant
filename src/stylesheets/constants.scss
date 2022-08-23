@@ -15,7 +15,8 @@ $light-blue: #228be6;
 $dark-blue: #1a67a9;
 $yellow: #ffce2b;
 $dark-yellow: #b3921f;
-$light-grey: #dfdfdf;
+$grey: #dfdfdf;
+$light-grey: #f9f9f9;
 $red: #ff4949;
 
 $font-color: $black;
@@ -24,8 +25,11 @@ $outline-color: $light-blue;
 $button-color: $yellow;
 $button-hover-color: darken($button-color, 10%);
 $error-color: $red;
+$background: $light-grey;
+$accent-background: $white;
+$accent-background-hover: $light-grey;
 
-$shadow-style: inset 0 4px $light-grey;
+$shadow-style: inset 0 4px $grey;
 $border-style: 2px solid $font-color;
 $thick-border-style: 7px solid $font-color;
 $border-radius: 10px;

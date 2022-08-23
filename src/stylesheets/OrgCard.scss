@@ -1,0 +1,21 @@
+@use "constants";
+
+.org-card {
+  transition: constants.$transition;
+  background-color: constants.$accent-background;
+  cursor: pointer;
+  padding: 20px;
+  border-radius: constants.$border-radius;
+  text-align: left;
+  margin: 5px 0;
+  border: constants.$border-style;
+  border-bottom: constants.$thick-border-style;
+
+  &:hover {
+    background-color: constants.$button-color;
+  }
+
+  .org-name {
+    margin: 0;
+  }
+}

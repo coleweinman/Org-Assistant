@@ -1,0 +1,18 @@
+@use "constants";
+
+.home {
+  height: 100vh;
+  background-color: constants.$background;
+  padding: 50px;
+  text-align: center;
+
+  .no-orgs-msg {
+    margin: 30px;
+  }
+
+  .org-card-container {
+    display: flex;
+    flex-direction: column;
+    padding: 50px 0;
+  }
+}
