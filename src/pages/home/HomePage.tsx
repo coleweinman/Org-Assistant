@@ -9,7 +9,7 @@ interface HomePageProps {
   db: Firestore,
 }
 
-function HomePage({ db }: HomePageProps) {
+const HomePage: React.FC<HomePageProps> = ({ db }) => {
   const [orgs, setOrgs] = React.useState<Org[] | null>(null);
 
   const auth = useAuth();
