@@ -1,4 +1,4 @@
-import { collection, doc, DocumentData, Firestore, FirestoreDataConverter, onSnapshot, query, where } from "firebase/firestore";
+import { addDoc, collection, doc, DocumentData, Firestore, FirestoreDataConverter, onSnapshot, query, setDoc, Timestamp, updateDoc, where } from "firebase/firestore";
 
 const eventConverter: FirestoreDataConverter<OrgEvent> = {
 	toFirestore: (orgEvent: OrgEvent) => orgEvent as DocumentData,
@@ -31,11 +31,27 @@ function getEvent(db: Firestore, orgId: string, eventId: string, secure: boolean
 	return unsub;
 }
 
+async function addEvent(db: Firestore, orgId: string, event: OrgEvent) {
+	const result = await addDoc(collection(db, "orgs", orgId, "events").withConverter<OrgEvent>(eventConverter), event);
+	return result.id;
+}
+
+async function updateEvent(db: Firestore, orgId: string, eventId: string, event: OrgEvent) {
+	await updateDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), event);
+}
+
 interface OrgEvent {
 	id: string,
 	name: string,
 	newAttendeeCount: number,
-	attendeeCount: number
+	attendeeCount: number,
+	imageURL: string,
+	description: string,
+	location: string,
+	startTime: Timestamp,
+	endTime: Timestamp,
+	virtual: boolean,
+	virtualEventURL: string
 }
 
 export { getEvents, getEvent };
