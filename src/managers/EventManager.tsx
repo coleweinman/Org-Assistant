@@ -43,15 +43,15 @@ async function updateEvent(db: Firestore, orgId: string, eventId: string, event:
 interface OrgEvent {
 	id: string,
 	name: string,
-	newAttendeeCount: number,
-	attendeeCount: number,
 	imageURL: string,
 	description: string,
 	location: string,
 	startTime: Timestamp,
 	endTime: Timestamp,
-	virtual: boolean,
-	virtualEventURL: string
+	modality: string, // virtual, in-person or hybrid
+	virtualEventURL: string,
+	newAttendeeCount: number,
+	attendeeCount: number,
 }
 
 export { getEvents, getEvent };
