@@ -43,13 +43,14 @@ async function updateEvent(db: Firestore, orgId: string, eventId: string, event:
 interface OrgEvent {
 	id: string,
 	name: string,
-	imageURL: string,
+	seasonId: string,
+	imageUrl: string,
 	description: string,
 	location: string,
 	startTime: Timestamp,
 	endTime: Timestamp,
 	modality: string, // virtual, in-person or hybrid
-	virtualEventURL: string,
+	virtualEventUrl: string,
 	newAttendeeCount: number,
 	attendeeCount: number,
 }

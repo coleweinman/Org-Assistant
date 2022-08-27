@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, DocumentData, Firestore, FirestoreDataConverter, onSnapshot, query, setDoc, Timestamp } from "firebase/firestore";
+import { addDoc, collection, doc, DocumentData, Firestore, FirestoreDataConverter, getDocs, onSnapshot, query, setDoc, Timestamp, where } from "firebase/firestore";
 
 const eventConverter: FirestoreDataConverter<CheckIn> = {
 	toFirestore: (orgEvent: CheckIn) => orgEvent as DocumentData,
@@ -7,7 +7,13 @@ const eventConverter: FirestoreDataConverter<CheckIn> = {
 
 async function submitCheckIn(db: Firestore, orgId: string, eventId: string, checkIn: CheckIn) {
 	console.log(checkIn);
+	const q = query<CheckIn>(collection(db, "orgs", orgId, "events", eventId, "checkIns").withConverter<CheckIn>(eventConverter), where("email", "==", checkIn.email));
+	const docs = await getDocs(q);
+	if (!docs.empty) {
+		return false;
+	}
 	await addDoc(collection(db, "orgs", orgId, "events", eventId, "checkIns"), checkIn);
+	return true;
 }
 
 function getCheckIns(db: Firestore, orgId: string, eventId: string, callback: (checkIns: CheckIn[]) => void) {
@@ -26,6 +32,7 @@ function getCheckIns(db: Firestore, orgId: string, eventId: string, callback: (c
 interface CheckIn {
 	name: string,
 	email: string,
+	schoolId: string,
 	timestamp: Timestamp
 };
 

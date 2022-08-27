@@ -13,6 +13,7 @@ import NavigationBar from './NavigationBar';
 import CheckInPage from './pages/checkIn/CheckInPage';
 import EventPage from './pages/events/EventPage';
 import "./stylesheets/App.scss";
+import SubmitPage from './pages/checkIn/SubmitPage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBlMx0f35Ia49khVmeYFH6dmmpJEx2uMC0",
@@ -55,6 +56,11 @@ function App() {
           <Route path="orgs/:orgId/checkin/:eventId"
             element={
               <CheckInPage db={db} />
+            }
+          />
+          <Route path="orgs/:orgId/checkin/:eventId/submitted"
+            element={
+              <SubmitPage/>
             }
           />
           <Route path="orgs/:orgId/events/:eventId"
