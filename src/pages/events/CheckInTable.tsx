@@ -41,12 +41,12 @@ const CheckInTable: React.FC<CheckInTableProps> = ({ checkIns }) => {
   });
 
   return (
-    <div className={"check-in-container"}>
+    <div className={"section check-in-container"}>
       <table className={"check-in-table"}>
         <thead>
           <tr>
             <th colSpan={columns.length}>
-              <h2>Check Ins</h2>
+              <h2 className={"section-title"}>Check Ins</h2>
             </th>
           </tr>
           {table.getHeaderGroups().map((headerGroup) => (

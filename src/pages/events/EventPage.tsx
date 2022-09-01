@@ -13,6 +13,9 @@ import { Firestore } from "firebase/firestore";
 import { useParams } from "react-router-dom";
 import { CheckIn, getCheckIns } from "../../managers/CheckInManager";
 import { getEvent, OrgEvent } from "../../managers/EventManager";
+import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import CheckInTable from "./CheckInTable";
 import "../../stylesheets/EventPage.scss";
 
@@ -25,6 +28,7 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
 
   const { orgId, eventId } = useParams();
+  const navigate = useNavigate();
   const onCheckInsUpdate = (checkIns: CheckIn[]) => setCheckIns(checkIns);
   const onEventUpdate = (event: OrgEvent | null) => setEvent(event);
 
@@ -47,38 +51,44 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
   }
 
   return (
-    <Container>
-      <Typography variant="h3" sx={{
-        textAlign: 'center',
-        padding: '8px'
-      }}>{event.name}</Typography>
-      <Stack
-        spacing="16px"
-        alignItems={'center'}
-      >
-        <Card
-          sx={{
-            width: "300px"
-          }}
-        >
-          <CardContent>
-            <Stack
-              alignItems={'center'}
-            >
-              <Typography variant="h5">Event Settings</Typography>
-              <Button variant="outlined" endIcon={<ExitToApp/>}
-                      target={"_blank"}
-                      href={`/orgs/${orgId}/checkin/${eventId}`}>
-                VIEW CHECK IN PAGE
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-        <CheckInTable checkIns={checkIns ?? []}/>
-        <Typography>New Attendees: {event.newAttendeeCount}</Typography>
-        <Typography>Attendees: {event.attendeeCount}</Typography>
-      </Stack>
-    </Container>
+    <div className={"event-page"}>
+      <button className={"back-button"} onClick={() => navigate(-1)}>
+        <FontAwesomeIcon icon={solid("chevron-left")} />
+      </button>
+      <h1 className={"header"}>{event.name}</h1>
+      <div className={"section event-settings"}>
+        <h2 className={"section-title"}>Event Settings</h2>
+        <button
+          className={"view-check-in"}
+          onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")
+        }>
+          View check-in page
+          <span className={"new-tab-icon"}>
+            <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
+          </span>
+        </button>
+      </div>
+      <div className={"section event-stats"}>
+        <h2 className={"section-title"}>Event Statistics</h2>
+        <table className={"attendee-table"}>
+          <tbody>
+            <tr>
+              <th>New:</th>
+              <td>{event.newAttendeeCount}</td>
+            </tr>
+            <tr>
+              <th>Returning:</th>
+              <td>{event.attendeeCount - event.newAttendeeCount}</td>
+            </tr>
+            <tr>
+              <th>Total Attendees:</th>
+              <td>{event.attendeeCount}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <CheckInTable checkIns={checkIns || []} />
+    </div>
   );
 }
 

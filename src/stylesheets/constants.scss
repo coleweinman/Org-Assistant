@@ -16,6 +16,7 @@ $dark-blue: #1a67a9;
 $yellow: #ffce2b;
 $dark-yellow: #b3921f;
 $grey: #dfdfdf;
+$medium-light-grey: #f0f0f0;
 $light-grey: #f9f9f9;
 $red: #ff4949;
 
@@ -25,7 +26,7 @@ $outline-color: $light-blue;
 $button-color: $yellow;
 $button-hover-color: darken($button-color, 10%);
 $error-color: $red;
-$background: $light-grey;
+$background: $medium-light-grey;
 $accent-background: $white;
 $accent-background-hover: $light-grey;
 
