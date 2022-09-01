@@ -1,45 +1,115 @@
-import * as React from 'react';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+import React from "react";
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  useReactTable,
+  flexRender,
+  getPaginationRowModel
+} from "@tanstack/react-table";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { CheckIn } from '../../managers/CheckInManager';
-import { Typography } from '@mui/material';
+import "../../stylesheets/CheckInTable.scss";
 
-function CheckInTable({ checkIns } : { checkIns: CheckIn[] }) {
+interface CheckInTableProps {
+  checkIns: CheckIn[]
+}
+
+const columnHelper = createColumnHelper<CheckIn>();
+
+const columns = [
+  columnHelper.accessor("name", {
+    cell: (info) => info.getValue(),
+    header: "Name"
+  }),
+  columnHelper.accessor("email", {
+    cell: (info) => info.getValue(),
+    header: "Email"
+  }),
+  columnHelper.accessor("timestamp", {
+    cell: (info) => info.getValue().toDate().toLocaleString(),
+    header: "Timestamp"
+  })
+];
+
+const CheckInTable: React.FC<CheckInTableProps> = ({ checkIns }) => {
+  const table = useReactTable<CheckIn>({
+    data: checkIns,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel()
+  });
+
   return (
-    <TableContainer component={Paper}>
-      <Typography variant="h5" sx={{ padding: "8px", paddingTop: "16px", textAlign: "center" }}>Check Ins</Typography>
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell align="right">Timestamp</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {checkIns.map((checkIn) => (
-            <TableRow
-              hover
-              key={checkIn.name}
-              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-            >
-							<TableCell component="th" scope="row">
-                {checkIn.name}
-              </TableCell>
-              <TableCell component="th" scope="row">
-                {checkIn.email}
-              </TableCell>
-              <TableCell align="right">{checkIn.timestamp.toDate().toLocaleString()}</TableCell>
-            </TableRow>
+    <div className={"check-in-container"}>
+      <table className={"check-in-table"}>
+        <thead>
+          <tr>
+            <th colSpan={columns.length}>
+              <h2>Check Ins</h2>
+            </th>
+          </tr>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th key={header.id}>
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                </th>
+              ))}
+            </tr>
           ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={columns.length - 1} />
+            <td className={"buttons-container"}>
+              <div className={"buttons-container"}>
+                <button
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  <FontAwesomeIcon icon={solid("chevron-left")} />
+                  <FontAwesomeIcon icon={solid("chevron-left")} />
+                </button>
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  <FontAwesomeIcon icon={solid("chevron-left")} />
+                </button>
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  <FontAwesomeIcon icon={solid("chevron-right")} />
+                </button>
+                <button
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                >
+                  <FontAwesomeIcon icon={solid("chevron-right")} />
+                  <FontAwesomeIcon icon={solid("chevron-right")} />
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   );
 }
 
