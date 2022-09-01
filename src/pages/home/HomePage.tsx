@@ -23,7 +23,7 @@ const HomePage: React.FC<HomePageProps> = ({ db }) => {
   }, [db, auth.user]);
 
   return (
-    <div className={"home"}>
+    <div className={"page home"}>
       <h1 className={"header"}>Your Organizations</h1>
       {orgs ? (
         <div className={"org-card-container"}>

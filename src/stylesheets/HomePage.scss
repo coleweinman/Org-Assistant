@@ -1,10 +1,9 @@
 @use "constants";
 
 .home {
-  height: 100vh;
-  background-color: constants.$background;
   padding: 50px;
   text-align: center;
+  align-items: stretch !important;
 
   .no-orgs-msg {
     margin: 30px;

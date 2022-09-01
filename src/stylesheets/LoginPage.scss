@@ -1,10 +1,7 @@
 @use "constants";
 
 .login {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-color: constants.$accent-background !important;
   justify-content: center;
 
   .login-form {

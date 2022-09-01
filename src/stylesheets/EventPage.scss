@@ -1,11 +1,7 @@
 @use "constants";
 
 .event-page {
-  display: flex;
-  flex-direction: column;
   padding: 40px;
-  position: relative;
-  background-color: constants.$background;
 
   .back-button {
     transition: constants.$transition;
@@ -49,7 +45,6 @@
         font-size: constants.$icon-size;
         margin-left: 10px;
       }
-
     }
   }
 }

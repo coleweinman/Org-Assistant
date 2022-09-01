@@ -51,7 +51,7 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
   }
 
   return (
-    <div className={"event-page"}>
+    <div className={"page event-page"}>
       <button className={"back-button"} onClick={() => navigate(-1)}>
         <FontAwesomeIcon icon={solid("chevron-left")} />
       </button>
