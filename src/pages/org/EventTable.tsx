@@ -1,45 +1,46 @@
-import * as React from 'react';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+import React from 'react';
 import { OrgEvent } from '../../managers/EventManager';
 import { useNavigate } from 'react-router-dom';
+import { createColumnHelper } from "@tanstack/react-table";
+import Table from "../../components/Table";
+import { timestampToDate } from "../../helpers/Dates";
 
-function EventTable({ events }: { events: OrgEvent[] }) {
-	const navigation = useNavigate();
-
-	return (
-		<TableContainer component={Paper}>
-			<Table sx={{ minWidth: 650 }} aria-label="simple table">
-				<TableHead>
-					<TableRow>
-						<TableCell>Name</TableCell>
-						{/* <TableCell>Email</TableCell>
-            <TableCell align="right">Timestamp</TableCell> */}
-					</TableRow>
-				</TableHead>
-				<TableBody>
-					{events.map((event) => (
-						<TableRow
-							hover
-							key={event.name}
-							sx={{ '&:last-child td, &:last-child th': { border: 0, cursor: 'pointer' } }}
-							onClick={() => navigation('events/' + event.id)}
-						>
-							<TableCell component="th" scope="row">
-								{event.name}
-							</TableCell>
-							{/* <TableCell align="right">{event.timestamp.toString()}</TableCell> */}
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
-		</TableContainer>
-	);
+interface EventTableProps {
+	events: OrgEvent[] | null
 }
+
+const columnHelper = createColumnHelper<OrgEvent>();
+
+const columns = [
+	columnHelper.accessor("name", {
+		cell: (info) => info.getValue(),
+		header: "Name"
+	}),
+	columnHelper.accessor("location", {
+		cell: (info) => info.getValue(),
+		header: "Location"
+	}),
+	columnHelper.accessor("startTime", {
+		cell: (info) => timestampToDate(info.getValue()),
+		header: "Start"
+	}),
+	columnHelper.accessor("endTime", {
+		cell: (info) => timestampToDate(info.getValue()),
+		header: "End"
+	})
+];
+
+const EventTable: React.FC<EventTableProps> = ({ events }) => {
+	const navigate = useNavigate();
+	return (
+		<Table
+			data={events}
+			columns={columns}
+			tableName={"event-table"}
+			tableTitle={"Events"}
+			onClick={({ id }) => navigate(`events/${id}`)}
+		/>
+	);
+};
 
 export default EventTable;

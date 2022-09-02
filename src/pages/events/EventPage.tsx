@@ -78,7 +78,7 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
           </tbody>
         </table>
       </div>
-      <CheckInTable checkIns={checkIns || []} />
+      <CheckInTable checkIns={checkIns} />
     </div>
   );
 }
