@@ -1,6 +1,10 @@
 @use "constants";
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;900&display=swap');
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: constants.$font-family;
   font-size: constants.$font-size;
@@ -46,13 +50,13 @@ button {
   border: constants.$border-style;
   cursor: pointer;
 
+  &:hover {
+    background-color: constants.$button-hover-color;
+  }
+
   &[type=submit] {
     background-color: constants.$button-color;
     border-bottom: constants.$thick-border-style;
-
-    &:hover {
-      background-color: constants.$button-hover-color;
-    }
   }
 }
 
@@ -62,5 +66,19 @@ form {
     flex-direction: column;
     font-weight: constants.$extra-bold;
     margin: 5px 0;
+  }
+}
+
+.section {
+  border: constants.$border-style;
+  border-bottom: constants.$thick-border-style;
+  border-radius: constants.$border-radius;
+  width: 100%;
+  padding: 30px;
+  margin: 10px 0;
+  background-color: constants.$accent-background;
+
+  .section-title {
+    margin: 0 0 20px 0;
   }
 }

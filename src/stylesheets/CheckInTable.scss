@@ -1,0 +1,54 @@
+@use "constants";
+
+.check-in-container {
+  overflow: hidden;
+  padding: 0 !important;
+
+  .check-in-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    h2 {
+      margin: 0;
+    }
+
+    td, th {
+      text-align: center;
+      padding: 10px 20px;
+      flex: 1;
+    }
+
+    tbody tr:nth-of-type(2n - 1) {
+      background-color: constants.$light-grey;
+    }
+
+    tfoot {
+      .buttons-container {
+        display: flex;
+        justify-content: flex-end;
+
+        button {
+          padding: 0;
+          width: 50px;
+          height: 50px;
+          margin: 0 2px;
+
+          &[disabled=""] {
+            background-color: transparent;
+            border: none;
+            cursor: not-allowed;
+            opacity: 0.5;
+
+            &:hover {
+              background-color: transparent;
+            }
+          }
+
+          &:hover {
+            background-color: constants.$button-color;
+          }
+        }
+      }
+    }
+  }
+}

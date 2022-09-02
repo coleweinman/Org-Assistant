@@ -34,7 +34,7 @@ interface CheckIn {
 	email: string,
 	schoolId: string,
 	timestamp: Timestamp
-};
+}
 
 export { submitCheckIn, getCheckIns };
 export type { CheckIn };
