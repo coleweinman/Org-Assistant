@@ -51,7 +51,7 @@ button {
   cursor: pointer;
 
   &:hover {
-    background-color: constants.$button-hover-color;
+    background-color: constants.$button-hover-color !important;
   }
 
   &[type=submit] {
@@ -67,6 +67,15 @@ form {
     font-weight: constants.$extra-bold;
     margin: 5px 0;
   }
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  background-color: constants.$background;
 }
 
 .section {

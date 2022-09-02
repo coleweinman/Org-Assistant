@@ -1,22 +1,13 @@
 import React from "react";
-import { ExitToApp } from "@mui/icons-material";
-import {
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography
-} from "@mui/material";
 import { Firestore } from "firebase/firestore";
 import { useParams } from "react-router-dom";
-import { CheckIn, getCheckIns } from "../../managers/CheckInManager";
-import { getEvent, OrgEvent } from "../../managers/EventManager";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import CheckInTable from "./CheckInTable";
+import { CheckIn, getCheckIns } from "../../managers/CheckInManager";
+import { getEvent, OrgEvent } from "../../managers/EventManager";
+import loading from "../../images/loader.svg";
 import "../../stylesheets/EventPage.scss";
 
 interface EventPageProps {
@@ -44,14 +35,14 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
 
   if (!event) {
     return (
-      <Container>
-        <CircularProgress/>
-      </Container>
+      <div className={"page event-page loading-event-page"}>
+        <img src={loading} alt={"Loading..."} />
+      </div>
     );
   }
 
   return (
-    <div className={"event-page"}>
+    <div className={"page event-page"}>
       <button className={"back-button"} onClick={() => navigate(-1)}>
         <FontAwesomeIcon icon={solid("chevron-left")} />
       </button>
@@ -87,7 +78,7 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
           </tbody>
         </table>
       </div>
-      <CheckInTable checkIns={checkIns || []} />
+      <CheckInTable checkIns={checkIns} />
     </div>
   );
 }

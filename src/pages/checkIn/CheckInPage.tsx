@@ -1,85 +1,107 @@
-import { Button, Container, Stack, TextField, Typography } from "@mui/material";
-import { cleanup } from "@testing-library/react";
-import { Firestore, Timestamp } from "firebase/firestore";
 import React from "react";
+import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { CheckIn, submitCheckIn } from "../../managers/CheckInManager";
 import { getEvent, OrgEvent } from "../../managers/EventManager";
+import { CheckInFields, InputType } from "../../helpers/FormFields";
+import CheckInField from "./CheckInField";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import "../../stylesheets/CheckInPage.scss";
+import { isEmail, isFilled } from "../../helpers/Forms";
+
+type FormState = {
+	[key: string]: string
+}
 
 interface CheckInPageProps {
 	db: Firestore,
 }
 
-function CheckInPage(props: CheckInPageProps) {
-	let params = useParams();
+const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
+	const [event, setEvent] = React.useState<OrgEvent | null>(null);
+	const [formData, setFormData] = React.useState<FormState>({});
+	const [error, setError] = React.useState<string>("");
+
+	let { orgId, eventId } = useParams();
 	let navigate = useNavigate();
-	let [event, setEvent] = React.useState<OrgEvent | null>(null);
-	let [name, setName] = React.useState<string>(window.localStorage.getItem("name") ?? "");
-	let [email, setEmail] = React.useState<string>(window.localStorage.getItem("email") ?? "");
-	let [schoolId, setSchoolId] = React.useState<string>(window.localStorage.getItem("schoolId") ?? "");
 
-	React.useEffect(() => {
-		let unsub = getEvent(props.db, params.orgId!, params.eventId!, false, (event) => {
-			setEvent(event);
-		});
-		return function cleanup() {
-			unsub();
-		};
-	}, [props.db, params.orgId, params.eventId]);
+	React.useEffect(() => (
+		getEvent(
+			db,
+			orgId!,
+			eventId!,
+			false, (event) => setEvent(event)
+		)
+	), [db, orgId, eventId]);
 
-	if (event === null) {
-		return (
-			<Container></Container>
-		);
+	const setFieldValue = (key: string, value: string) => {
+		setFormData((prevData) => ({
+			...prevData,
+			[key]: value
+		}));
+	};
+
+	const validate = () => {
+		for (const { id, inputType } of CheckInFields) {
+			let invalid = true;
+			if (!isFilled(formData[id])) {
+				setError("Please fill out all fields.");
+			} else if (inputType === InputType.EMAIL && !isEmail(formData[id])) {
+				setError("Please enter a valid email address.");
+			} else {
+				invalid = false;
+			}
+			if (invalid)
+				return false;
+		}
+		setError("");
+		return true;
 	}
 
-	const submit = async () => {
+	const submit: React.FormEventHandler = async (e) => {
+		e.preventDefault();
+		if (!validate())
+			return;
 		let checkIn: CheckIn = {
-			name: name,
-			email: email,
-			schoolId: schoolId,
-			timestamp: Timestamp.now() 
-		};
-		window.localStorage.setItem("name", name);
-		window.localStorage.setItem("email", email);
-		window.localStorage.setItem("schoolId", schoolId);
-		const success = await submitCheckIn(props.db, params.orgId!, params.eventId!, checkIn);
+			...formData,
+			timestamp: Timestamp.now()
+		} as CheckIn;
+		for (const { id } of CheckInFields) {
+			window.localStorage.setItem(id, formData[id]);
+		}
+		const success = await submitCheckIn(db, orgId!, eventId!, checkIn);
 		if (success)
 			navigate("submitted");
 	};
 
+	if (event === null) {
+		return (
+			<div className={"page check-in-page"} />
+		);
+	}
 
 	return (
-		<Container>
-			<Typography>{event!.name}</Typography>
-			<Stack
-				direction={"column"}
-				spacing={"8px"}
-			>
-				<TextField
-					required
-					id="name-field"
-					label="Name"
-					defaultValue={name}
-					onChange={(e) => setName(e.target.value)}
-				/>
-				<TextField
-					required
-					id="email-field"
-					label="Email"
-					defaultValue={email}
-					onChange={(e) => setEmail(e.target.value)}
-				/>
-				<TextField
-					required
-					id="school-id-field"
-					label="UT EID"
-					defaultValue={schoolId}
-					onChange={(e) => setSchoolId(e.target.value)}
-				/>
-				<Button variant="contained" onClick={() => submit()}>CHECK IN</Button>
-			</Stack>
-		</Container>
+		<div className={"page check-in-page"}>
+			<h1 className={"header"}>{event.name}</h1>
+			<form className={"check-in-form"} noValidate onSubmit={submit}>
+				{CheckInFields.map((field) => (
+					<CheckInField
+						{...field}
+						key={field.id}
+						value={formData[field.id] ?? ""}
+						setValue={(value) => setFieldValue(field.id, value)}
+					/>
+				))}
+				<button type={"submit"}>
+					Check In
+					<span className={"icon"}>
+						<FontAwesomeIcon icon={solid("paper-plane")} />
+					</span>
+				</button>
+				{error.length > 0 && <p className={"error"}>{error}</p>}
+			</form>
+		</div>
 	);
 }
 

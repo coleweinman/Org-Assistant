@@ -51,7 +51,7 @@ function LoginPage() {
   }
 
   return (
-    <div className={"login"}>
+    <div className={"page login"}>
       <h1 className={"heading"}>
         Org Assistant
       </h1>
