@@ -51,7 +51,7 @@ button {
   cursor: pointer;
 
   &:hover {
-    background-color: constants.$button-hover-color;
+    background-color: constants.$button-hover-color !important;
   }
 
   &[type=submit] {

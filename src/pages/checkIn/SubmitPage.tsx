@@ -1,11 +1,9 @@
-import { Container, Typography } from "@mui/material";
+import React from "react";
 
-function SubmitPage() {
-    return (
-        <Container>
-            <Typography>You are now checked in!</Typography>
-        </Container>
-    );
-}
+const SubmitPage: React.FC = () => (
+  <div className={"page submit-page"}>
+    <h3>You are now checked in!</h3>
+  </div>
+);
 
 export default SubmitPage;

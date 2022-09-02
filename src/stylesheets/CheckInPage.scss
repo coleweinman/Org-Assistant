@@ -1,0 +1,27 @@
+@use "constants";
+
+.check-in-page {
+  padding: 30px;
+
+  .check-in-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 750px;
+    align-items: stretch;
+    padding: 30px;
+
+    input::placeholder {
+      text-transform: lowercase;
+    }
+
+    button .icon {
+      font-size: constants.$icon-size;
+      margin-left: 10px;
+    }
+
+    .error {
+      color: constants.$error-color;
+    }
+  }
+}
