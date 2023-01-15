@@ -1,6 +1,6 @@
 import { Firestore } from "firebase/firestore";
 import React from "react";
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import { getEvents, OrgEvent } from "../../managers/EventManager";
 import EventTable from "./EventTable";
 import "../../stylesheets/OrgPage.scss";
@@ -12,7 +12,7 @@ interface OrgPageProps {
 
 const OrgPage: React.FC<OrgPageProps> = ({ db, seasonId }) => {
   const [events, setEvents] = React.useState<OrgEvent[] | null>(null);
-
+  const navigate = useNavigate();
   const params = useParams();
   const onEventsUpdate = (events: OrgEvent[]) => setEvents(events);
 
@@ -23,6 +23,11 @@ const OrgPage: React.FC<OrgPageProps> = ({ db, seasonId }) => {
   return (
     <div className={"page org-page"}>
       <EventTable events={events}/>
+      <button
+        onClick={() => navigate("createEvent")}
+      >
+        Create New Event
+      </button>
     </div>
   );
 }

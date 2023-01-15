@@ -38,6 +38,28 @@ input[type=text], input[type=email], input[type=password] {
   }
 }
 
+select {
+  padding: 20px;
+  font-family: constants.$font-family;
+  border-radius: constants.$border-radius;
+  border: constants.$border-style;
+  font-weight: constants.$normal-bold;
+  margin: 5px 0;
+  font-size: constants.$font-size;
+  box-shadow: constants.$shadow-style;
+  background-color: constants.$accent-background;
+
+  &::placeholder {
+    font-weight: constants.$normal;
+  }
+
+  &:focus {
+    outline: 2px solid constants.$outline-color;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
 button {
   padding: 15px;
   font-family: constants.$font-family;

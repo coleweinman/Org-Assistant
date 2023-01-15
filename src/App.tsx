@@ -14,6 +14,7 @@ import CheckInPage from './pages/checkIn/CheckInPage';
 import EventPage from './pages/events/EventPage';
 import "./stylesheets/App.scss";
 import SubmitPage from './pages/checkIn/SubmitPage';
+import CreateEventPage from './pages/events/CreateEventPage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBlMx0f35Ia49khVmeYFH6dmmpJEx2uMC0",
@@ -47,7 +48,7 @@ function App() {
               path=":orgId"
               element={
                 <AuthGuard>
-                  <OrgPage db={db} seasonId={"2022"} />
+                  <OrgPage db={db} seasonId={"Fall 2022"} />
                 </AuthGuard>
               }
             >
@@ -66,6 +67,11 @@ function App() {
           <Route path="orgs/:orgId/events/:eventId"
             element={
               <EventPage db={db} />
+            }
+          />
+          <Route path="orgs/:orgId/createEvent"
+            element={
+              <CreateEventPage db={db} />
             }
           />
         </Route>

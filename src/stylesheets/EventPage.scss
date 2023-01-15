@@ -51,4 +51,13 @@
       }
     }
   }
+
+  .new-event-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 750px;
+    align-items: stretch;
+    padding: 30px;
+  }
 }

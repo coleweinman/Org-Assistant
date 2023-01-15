@@ -10,9 +10,38 @@ const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 const FieldPath = admin.firestore.FieldPath;
 
-export const helloWorld = functions.https.onRequest((request, response) => {
-  functions.logger.info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
+exports.getEvents = functions.https.onRequest(async (request, response) => {
+  const orgId = request.query.orgId;
+  const seasonId = request.query.seasonId;
+  console.log(request.query);
+  if (orgId === undefined) {
+    response
+        .status(400)
+        .json({"status": "error", "message": "Org Id not provided."});
+    return;
+  }
+  let q: any = db.collection("orgs").doc(orgId as string).collection("events");
+  if (seasonId !== undefined) {
+    q = q.where("seasonId", "==", seasonId);
+  }
+  const querySnapshot = await q.orderBy("startTime").get();
+  const events = [];
+  for (const doc of querySnapshot.docs) {
+    const event = doc.data();
+    const newEvent = {
+      "name": event.name,
+      "imageUrl": event.imageUrl,
+      "description": event.description,
+      "location": event.location,
+      "startTime": event.startTime,
+      "endTime": event.endTime,
+      "modality": event.modality,
+      "virtualEventUrl": event.virtualEventUrl,
+    };
+    events.push(newEvent);
+  }
+  // functions.logger.info("Hello logs!", { structuredData: true });
+  response.json({"status": "success", "data": {"events": events}});
 });
 
 export const onCheckInCreate = functions.firestore
@@ -30,7 +59,7 @@ export const onCheckInCreate = functions.firestore
           .doc(context.params.eventId)
           .get();
       const event = eventDoc.data()!;
-      const eventSeasonId = event.seasonID;
+      const eventSeasonId = event.seasonId;
       console.log(eventDoc.data());
       console.log(eventSeasonId);
 

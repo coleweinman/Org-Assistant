@@ -27,6 +27,10 @@ const columns = [
 	columnHelper.accessor("endTime", {
 		cell: (info) => timestampToDate(info.getValue()),
 		header: "End"
+	}),
+	columnHelper.accessor("attendeeCount", {
+		cell: (info) => info.getValue(),
+		header: "Attendees"
 	})
 ];
 

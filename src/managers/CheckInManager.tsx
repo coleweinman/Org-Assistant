@@ -33,6 +33,7 @@ interface CheckIn {
 	name: string,
 	email: string,
 	schoolId: string,
+	year: string,
 	timestamp: Timestamp
 }
 
