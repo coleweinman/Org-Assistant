@@ -18,5 +18,6 @@ export const CheckInFields: FormField[] = [
   { id: "name", label: "Name", required: true, inputType: InputType.TEXT },
   { id: "email", label: "Email", required: true, inputType: InputType.EMAIL },
   { id: "schoolId", label: "UT EID", required: true, inputType: InputType.TEXT },
-  { id: "year", label: "Year", required: true, inputType: InputType.DROPDOWN, options: ["Freshman", "Sophmore", "Junior", "Senior"]},
+  { id: "year", label: "Year", required: true, inputType: InputType.DROPDOWN, options: ["Freshman", "Sophmore", "Junior", "Senior", "Super Senior", "Grad Student"]},
+  { id: "discord", label: "Discord", required: false, inputType: InputType.TEXT },
 ];

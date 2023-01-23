@@ -44,8 +44,8 @@ exports.getEvents = functions.https.onRequest(async (request, response) => {
   response.json({"status": "success", "data": {"events": events}});
 });
 
-export const onCheckInCreate = functions.firestore
-    .document("orgs/{orgId}/events/{eventId}/checkIns/{checkInId}")
+export const onCreateCheckIn = functions.firestore
+    .document("orgs/{orgId}/checkIns/{checkInId}")
     .onCreate(async (checkInDoc, context) => {
       const checkIn = checkInDoc.data();
       const name: string = checkIn.name;
@@ -56,7 +56,7 @@ export const onCheckInCreate = functions.firestore
           .collection("orgs")
           .doc(context.params.orgId)
           .collection("events")
-          .doc(context.params.eventId)
+          .doc(checkIn.eventId)
           .get();
       const event = eventDoc.data()!;
       const eventSeasonId = event.seasonId;
@@ -95,6 +95,8 @@ export const onCheckInCreate = functions.firestore
       updateData.push(FieldValue.increment(1));
       updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
       updateData.push(FieldValue.increment(1));
+      updateData.push(new FieldPath("lastActiveSeasonId"));
+      updateData.push(eventSeasonId);
       console.log(updateData);
       await attendeeDocRef.update(
           updateData[0],

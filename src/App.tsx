@@ -48,7 +48,7 @@ function App() {
               path=":orgId"
               element={
                 <AuthGuard>
-                  <OrgPage db={db} seasonId={"Fall 2022"} />
+                  <OrgPage db={db} seasonId={"Spring 2023"} />
                 </AuthGuard>
               }
             >

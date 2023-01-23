@@ -7,17 +7,30 @@ const eventConverter: FirestoreDataConverter<CheckIn> = {
 
 async function submitCheckIn(db: Firestore, orgId: string, eventId: string, checkIn: CheckIn) {
 	console.log(checkIn);
-	const q = query<CheckIn>(collection(db, "orgs", orgId, "events", eventId, "checkIns").withConverter<CheckIn>(eventConverter), where("email", "==", checkIn.email));
+	const q = query<CheckIn>(collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(eventConverter), where("email", "==", checkIn.email), where("eventId", "==", eventId));
 	const docs = await getDocs(q);
 	if (!docs.empty) {
 		return false;
 	}
-	await addDoc(collection(db, "orgs", orgId, "events", eventId, "checkIns"), checkIn);
+	await addDoc(collection(db, "orgs", orgId, "checkIns"), checkIn);
 	return true;
 }
 
 function getCheckIns(db: Firestore, orgId: string, eventId: string, callback: (checkIns: CheckIn[]) => void) {
-	const q = query<CheckIn>(collection(db, "orgs", orgId, "events", eventId, "checkIns").withConverter<CheckIn>(eventConverter));
+	const q = query<CheckIn>(collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(eventConverter), where("eventId", "==", eventId));
+	const unsubscribe = onSnapshot(q, (querySnapshot) => {
+			const checkIns: CheckIn[] = [];
+			querySnapshot.forEach((doc) => {
+					let data: CheckIn = doc.data();
+					checkIns.push(data);
+			});
+			callback(checkIns);
+	});
+	return unsubscribe;
+}
+
+function getAttendeeCheckIns(db: Firestore, orgId: string, email: string, callback: (checkIns: CheckIn[]) => void) {
+	const q = query<CheckIn>(collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(eventConverter), where("email", "==", email));
 	const unsubscribe = onSnapshot(q, (querySnapshot) => {
 			const checkIns: CheckIn[] = [];
 			querySnapshot.forEach((doc) => {
@@ -34,7 +47,9 @@ interface CheckIn {
 	email: string,
 	schoolId: string,
 	year: string,
-	timestamp: Timestamp
+	discord: string | null
+	timestamp: Timestamp,
+	eventId: string
 }
 
 export { submitCheckIn, getCheckIns };

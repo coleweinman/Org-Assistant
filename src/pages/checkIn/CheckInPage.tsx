@@ -12,11 +12,11 @@ import { isEmail, isFilled } from "../../helpers/Forms";
 
 type FormState = {
 	[key: string]: string
-}
+};
 
 interface CheckInPageProps {
 	db: Firestore,
-}
+};
 
 const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 	const [event, setEvent] = React.useState<OrgEvent | null>(null);
@@ -65,6 +65,7 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 			return;
 		let checkIn: CheckIn = {
 			...formData,
+			eventId: eventId!,
 			timestamp: Timestamp.now()
 		} as CheckIn;
 		for (const { id } of CheckInFields) {

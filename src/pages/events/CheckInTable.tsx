@@ -19,6 +19,14 @@ const columns: ColumnDef<CheckIn, any>[] = [
     cell: (info) => info.getValue(),
     header: "Email"
   }),
+  columnHelper.accessor("year", {
+    cell: (info) => info.getValue(),
+    header: "Year"
+  }),
+  columnHelper.accessor("discord", {
+    cell: (info) => info.getValue(),
+    header: "Discord"
+  }),
   columnHelper.accessor("timestamp", {
     cell: (info) => timestampToDate(info.getValue()),
     header: "Timestamp"

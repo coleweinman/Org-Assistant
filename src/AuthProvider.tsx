@@ -5,9 +5,10 @@ import {
 	onAuthStateChanged,
 	User,
 	UserCredential,
-	signOut,
+	signOut as so,
 	signInWithEmailAndPassword,
-	AuthError
+	AuthError,
+	getAuth
 } from "firebase/auth";
 
 interface AuthContextType {
@@ -36,7 +37,7 @@ function AuthProvider({ auth, children }: { auth: Auth, children: React.ReactNod
 	}
 
 	const signOut = () => {
-		signOut();
+		so(getAuth());
 	};
 
 	const value = {
