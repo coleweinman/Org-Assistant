@@ -34,7 +34,7 @@ const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, la
           value={value}
           onChange={(e) => setValue(e.target.value)}
         >
-          {options?.map((option) => <option value={option} label={option} />)}
+          {options?.map((option) => <option key={option} value={option} label={option} />)}
         </select>
       )
     default:
