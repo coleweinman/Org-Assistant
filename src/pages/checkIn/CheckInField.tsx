@@ -8,9 +8,9 @@ interface CheckInFieldProps extends FormField {
 
 const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, label, options, value, setValue }) => {
   // Load previously stored value on initial render
-  React.useEffect(() => {
-    setValue(window.localStorage.getItem(id) ?? "");
-  }, [setValue, id]);
+  // React.useEffect(() => {
+  //   setValue(window.localStorage.getItem(id) ?? "");
+  // }, [setValue, id]);
 
   switch (inputType) {
     case InputType.TEXT:

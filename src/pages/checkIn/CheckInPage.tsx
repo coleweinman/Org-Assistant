@@ -26,14 +26,21 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 	let { orgId, eventId } = useParams();
 	let navigate = useNavigate();
 
-	React.useEffect(() => (
+	React.useEffect(() => {
 		getEvent(
 			db,
 			orgId!,
 			eventId!,
 			false, (event) => setEvent(event)
-		)
-	), [db, orgId, eventId]);
+		);
+		for (const { id, inputType, options } of CheckInFields) {
+			let defaultValue = "";
+			if (inputType === InputType.DROPDOWN) {
+				defaultValue = (options ?? [])[0];
+			}
+			setFieldValue(id, window.localStorage.getItem(id) ?? defaultValue);
+		}
+	}, [db, orgId, eventId]);
 
 	const setFieldValue = (key: string, value: string) => {
 		setFormData((prevData) => ({
