@@ -15,6 +15,10 @@ const columns: ColumnDef<CheckIn, any>[] = [
     cell: (info) => info.getValue(),
     header: "Name"
   }),
+  columnHelper.accessor("schoolId", {
+    cell: (info) => info.getValue(),
+    header: "UTEID"
+  }),
   columnHelper.accessor("email", {
     cell: (info) => info.getValue(),
     header: "Email"
@@ -35,7 +39,7 @@ const columns: ColumnDef<CheckIn, any>[] = [
 
 const CheckInTable: React.FC<CheckInTableProps> = ({ checkIns }) => (
   <Table
-    data={checkIns}
+    data={checkIns?.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis()) ?? []}
     columns={columns}
     tableName={"check-in-table"}
     tableTitle={"Check Ins"}
