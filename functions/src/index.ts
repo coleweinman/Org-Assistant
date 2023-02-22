@@ -11,6 +11,17 @@ const FieldValue = admin.firestore.FieldValue;
 const FieldPath = admin.firestore.FieldPath;
 
 exports.getEvents = functions.https.onRequest(async (request, response) => {
+  response.set("Access-Control-Allow-Origin", "*");
+
+  if (request.method === "OPTIONS") {
+    // Send response to OPTIONS requests
+    response.set("Access-Control-Allow-Methods", "GET");
+    response.set("Access-Control-Allow-Headers", "Content-Type");
+    response.set("Access-Control-Max-Age", "3600");
+    response.status(204).send("");
+    return;
+  }
+
   const orgId = request.query.orgId;
   const seasonId = request.query.seasonId;
   if (orgId === undefined) {
