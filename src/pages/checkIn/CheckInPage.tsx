@@ -81,6 +81,8 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 		const success = await submitCheckIn(db, orgId!, eventId!, checkIn);
 		if (success)
 			navigate("submitted");
+		else
+			setError("You already checked in!");
 	};
 
 	if (event === null) {
