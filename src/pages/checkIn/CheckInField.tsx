@@ -10,7 +10,7 @@ const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, la
   // Load previously stored value on initial render
   React.useEffect(() => {
     setValue(window.localStorage.getItem(id) ?? "");
-  }, []);
+  }, [setValue, id]);
 
   switch (inputType) {
     case InputType.TEXT:

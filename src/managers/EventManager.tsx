@@ -8,7 +8,6 @@ const eventConverter: FirestoreDataConverter<OrgEvent> = {
 function getEvents(db: Firestore, orgId: string, seasonId: string, callback: (events: OrgEvent[]) => void) {
 	const q = query<OrgEvent>(collection(db, "orgs", orgId, "events").withConverter<OrgEvent>(eventConverter), where("seasonId", "==", seasonId));
 	const unsubscribe = onSnapshot(q, (querySnapshot) => {
-		console.log(querySnapshot);
 		const events: OrgEvent[] = [];
 		querySnapshot.forEach((doc) => {
 			let data: OrgEvent = doc.data();

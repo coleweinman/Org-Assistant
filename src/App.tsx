@@ -9,7 +9,7 @@ import HomePage from './pages/home/HomePage';
 import { AuthProvider } from './AuthProvider';
 import AuthGuard from './AuthGuard';
 import OrgPage from './pages/org/OrgPage';
-import NavigationBar from './NavigationBar';
+import NavigationBar from './components/NavigationBar';
 import CheckInPage from './pages/checkIn/CheckInPage';
 import EventPage from './pages/events/EventPage';
 import "./stylesheets/App.scss";

@@ -6,7 +6,6 @@ const eventConverter: FirestoreDataConverter<CheckIn> = {
 }
 
 async function submitCheckIn(db: Firestore, orgId: string, eventId: string, checkIn: CheckIn) {
-	console.log(checkIn);
 	const q = query<CheckIn>(collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(eventConverter), where("email", "==", checkIn.email), where("eventId", "==", eventId));
 	const docs = await getDocs(q);
 	if (!docs.empty) {

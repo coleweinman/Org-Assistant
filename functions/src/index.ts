@@ -13,7 +13,6 @@ const FieldPath = admin.firestore.FieldPath;
 exports.getEvents = functions.https.onRequest(async (request, response) => {
   const orgId = request.query.orgId;
   const seasonId = request.query.seasonId;
-  console.log(request.query);
   if (orgId === undefined) {
     response
         .status(400)
@@ -60,8 +59,6 @@ export const onCreateCheckIn = functions.firestore
           .get();
       const event = eventDoc.data()!;
       const eventSeasonId = event.seasonId;
-      console.log(eventDoc.data());
-      console.log(eventSeasonId);
 
       // Update attendee data or create new attendee doc if new
       const attendeeCol = db
@@ -97,7 +94,6 @@ export const onCreateCheckIn = functions.firestore
       updateData.push(FieldValue.increment(1));
       updateData.push(new FieldPath("lastActiveSeasonId"));
       updateData.push(eventSeasonId);
-      console.log(updateData);
       await attendeeDocRef.update(
           updateData[0],
           updateData[1],

@@ -1,0 +1,49 @@
+@use "constants";
+
+.navbar {
+  display: flex;
+  padding: 20px;
+  width: 100vw;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10000000000000000000000000000000;
+  background-color: constants.$accent-background;
+
+  .nav-content {
+    display: flex;
+    align-items: center;
+
+    .nav-title {
+      margin: 0 0 0 10px;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0 30px;
+
+      li {
+        text-decoration: none;
+        color: constants.$font-color;
+        margin: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+
+        &:hover {
+          color: constants.$light-blue;
+        }
+      }
+    }
+  }
+
+  .log-out-button {
+    padding: 0;
+    margin: 0;
+    font-size: constants.$icon-size;
+    width: constants.$icon-size + 30px;
+    height: constants.$icon-size + 30px;
+  }
+}
