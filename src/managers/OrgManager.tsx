@@ -26,7 +26,6 @@ function getOrg(db: Firestore, orgId: string, callback: (org: Org | null) => voi
 	const unsub = onSnapshot(doc(db, "orgs", orgId).withConverter<Org>(orgConverter), (doc) => {
 		if (doc.exists()) {
 			const org = doc.data();
-            console.log(org);
 			callback(org);
 		} else {
 			callback(null);

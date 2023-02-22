@@ -42,13 +42,16 @@ function LoginPage() {
     setIsLoading(true);
     try {
       await auth.signInWithEmail(email, password);
-      navigate("/");
     } catch (e: any) {
       setError(e.message);
     } finally {
       setIsLoading(false);
     }
   }
+
+  React.useEffect(() => {
+    if (auth.user) navigate("/");
+  }, [auth.user, navigate]);
 
   return (
     <div className={"page login"}>

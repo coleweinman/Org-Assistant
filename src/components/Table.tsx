@@ -16,10 +16,11 @@ interface TableProps<T> {
   columns: ColumnDef<T, any>[],
   tableName: string,
   tableTitle: string,
-  onClick?: (row: T) => void
+  onClick?: (row: T) => void,
+  onCreate?: () => void
 }
 
-const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClick }: TableProps<T>) => {
+const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClick, onCreate }: TableProps<T>) => {
   const table = useReactTable<T>({
     data: data || [],
     columns,
@@ -32,8 +33,13 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
       <table className={tableName}>
         <thead>
           <tr>
-            <th colSpan={columns.length}>
+            <th className={"section-title-container"} colSpan={columns.length}>
               <h2 className={"section-title"}>{tableTitle}</h2>
+              {onCreate && (
+                <button className={"blue-button action-button"} onClick={onCreate}>
+                  <FontAwesomeIcon icon={solid("pen-to-square")} />
+                </button>
+              )}
             </th>
           </tr>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -50,10 +56,13 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
           ))}
         </thead>
         <tbody>
-          {!data ? (
+          {!data || data.length === 0 ? (
             <tr className={"loading-row"}>
               <td colSpan={columns.length}>
-                <img src={loading} alt={"Loading..."} />
+                {data
+                  ? "No data to display"
+                  : <img src={loading} alt={"Loading..."} />
+                }
               </td>
             </tr>
           ) : table.getRowModel().rows.map((row) => (

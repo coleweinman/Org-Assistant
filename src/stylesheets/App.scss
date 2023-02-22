@@ -48,6 +48,15 @@ select {
   font-size: constants.$font-size;
   box-shadow: constants.$shadow-style;
   background-color: constants.$accent-background;
+  appearance: none;
+  background-image: constants.$down-arrow;
+  background-repeat: no-repeat, repeat;
+  background-position: right .7em top 50%, 0 0;
+  background-size: .65em auto, 100%;
+
+  &::-ms-expand {
+    display: none;
+  }
 
   &::placeholder {
     font-weight: constants.$normal;
@@ -79,6 +88,16 @@ button {
   &[type=submit] {
     background-color: constants.$button-color;
     border-bottom: constants.$thick-border-style;
+  }
+}
+
+.blue-button {
+  background-color: transparent;
+  border: none;
+
+  &:hover {
+    background-color: transparent !important;
+    color: constants.$link-color;
   }
 }
 

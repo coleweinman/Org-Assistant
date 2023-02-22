@@ -15,7 +15,6 @@ interface OrgPageProps {
 const OrgPage: React.FC<OrgPageProps> = ({ db, seasonId }) => {
   const [events, setEvents] = React.useState<OrgEvent[] | null>(null);
   const [attendees, setAttendees] = React.useState<Attendee[] | null>(null);
-  const navigate = useNavigate();
   const params = useParams();
   const onEventsUpdate = (events: OrgEvent[]) => setEvents(events);
   const onAttendeesUpdate = (attendees: Attendee[]) => setAttendees(attendees);
@@ -27,13 +26,8 @@ const OrgPage: React.FC<OrgPageProps> = ({ db, seasonId }) => {
 
   return (
     <div className={"page org-page"}>
-      <EventTable events={events}/>
-      <AttendeeTable attendees={attendees}/>
-      <button
-        onClick={() => navigate("createEvent")}
-      >
-        Create New Event
-      </button>
+      <EventTable events={events} />
+      <AttendeeTable attendees={attendees} />
     </div>
   );
 }

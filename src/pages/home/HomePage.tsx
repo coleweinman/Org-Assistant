@@ -27,7 +27,7 @@ const HomePage: React.FC<HomePageProps> = ({ db }) => {
       <h1 className={"header"}>Your Organizations</h1>
       {orgs ? (
         <div className={"org-card-container"}>
-          {orgs.map((org) => <OrgCard org={org} />)}
+          {orgs.map((org) => <OrgCard key={org.id} org={org} />)}
         </div>
       ) : <p className={"no-orgs-msg"}>No organizations to display</p>}
     </div>

@@ -24,7 +24,6 @@ function AuthProvider({ auth, children }: { auth: Auth, children: React.ReactNod
 
 	onAuthStateChanged(auth, (user) => {
 		setUser(user);
-		console.log(user);
 	});
 
 	const signInWithEmail = async (email: string, password: string): Promise<UserCredential> => {

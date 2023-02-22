@@ -43,6 +43,7 @@ const EventTable: React.FC<EventTableProps> = ({ events }) => {
 			tableName={"event-table"}
 			tableTitle={"Events"}
 			onClick={({ id }) => navigate(`events/${id}`)}
+			onCreate={() => navigate("createEvent")}
 		/>
 	);
 };
