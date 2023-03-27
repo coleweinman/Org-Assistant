@@ -16,7 +16,7 @@ h1 {
   margin: 0;
 }
 
-input[type=text], input[type=email], input[type=password] {
+input[type=text], input[type=number], input[type=email], input[type=password] {
   padding: 20px;
   font-family: constants.$font-family;
   border-radius: constants.$border-radius;
@@ -35,6 +35,17 @@ input[type=text], input[type=email], input[type=password] {
     outline: 2px solid constants.$outline-color;
     outline-offset: 2px;
     box-shadow: none;
+  }
+}
+
+/* Remove number arrows */
+input[type=number].no-arrows {
+  -moz-appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 }
 
@@ -83,6 +94,11 @@ button {
 
   &:hover {
     background-color: constants.$button-hover-color !important;
+  }
+
+  &:focus {
+    outline: 2px solid constants.$outline-color;
+    outline-offset: -2px;
   }
 
   &[type=submit] {

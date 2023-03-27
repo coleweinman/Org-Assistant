@@ -18,6 +18,24 @@
       flex: 1;
     }
 
+    .column-header div {
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+
+      .sorting-arrow {
+        transition: transform 0.2s ease;
+
+        &.invisible {
+          opacity: 0;
+        }
+
+        &.down {
+          transform: rotate(180deg);
+        }
+      }
+    }
+
     .section-title-container {
       position: relative;
 
@@ -46,9 +64,33 @@
     }
 
     tfoot {
+      .total-count {
+        font-weight: bold;
+        text-align: left;
+      }
+
       .buttons-container {
         display: flex;
         justify-content: flex-end;
+        align-items: center;
+
+        .page-input {
+          display: flex;
+          align-items: center;
+          font-weight: bold;
+
+          input {
+            padding: 10px;
+            width: 50px;
+            text-align: center;
+          }
+
+          p {
+            margin: 0;
+            padding: 0;
+            width: 50px;
+          }
+        }
 
         button {
           padding: 0;

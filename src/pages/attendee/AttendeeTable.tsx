@@ -31,6 +31,7 @@ const AttendeeTable: React.FC<AttendeeTableProps> = ({ attendees }) => (
     columns={columns}
     tableName={"attendee-table"}
     tableTitle={"Attendees"}
+    initialSorting={[{ id: "name", desc: false }]}
   />
 );
 

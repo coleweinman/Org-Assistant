@@ -109,19 +109,19 @@ const EventPage: React.FC<EventPageProps> = ({ db }) => {
       </div>
       <button onClick={copy}>COPY</button>
       <CheckInTable checkIns={checkIns} />
-        <PieChart width={400} height={400}>
-          <Pie
-            nameKey="year"
-            dataKey="quantity"
-            isAnimationActive={false}
-            data={yearGroups ?? []}
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
-            label
-          />
-          <Tooltip />
-        </PieChart>
+      <PieChart width={400} height={400}>
+        <Pie
+          nameKey="year"
+          dataKey="quantity"
+          isAnimationActive={false}
+          data={yearGroups ?? []}
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label
+        />
+        <Tooltip />
+      </PieChart>
     </div>
   );
 }

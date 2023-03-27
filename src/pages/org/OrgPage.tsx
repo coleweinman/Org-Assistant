@@ -1,6 +1,6 @@
 import { Firestore } from "firebase/firestore";
 import React from "react";
-import {useNavigate, useParams} from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getEvents, OrgEvent } from "../../managers/EventManager";
 import EventTable from "./EventTable";
 import "../../stylesheets/OrgPage.scss";

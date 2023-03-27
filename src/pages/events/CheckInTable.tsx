@@ -39,7 +39,8 @@ const columns: ColumnDef<CheckIn, any>[] = [
 
 const CheckInTable: React.FC<CheckInTableProps> = ({ checkIns }) => (
   <Table
-    data={checkIns?.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis()) ?? []}
+    data={checkIns}
+    initialSorting={[{ id: "timestamp", desc: true }]}
     columns={columns}
     tableName={"check-in-table"}
     tableTitle={"Check Ins"}
