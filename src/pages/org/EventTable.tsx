@@ -44,6 +44,7 @@ const EventTable: React.FC<EventTableProps> = ({ events }) => {
 			tableTitle={"Events"}
 			onClick={({ id }) => navigate(`events/${id}`)}
 			onCreate={() => navigate("createEvent")}
+			initialSorting={[{ id: "startTime", desc: true }]}
 		/>
 	);
 };
