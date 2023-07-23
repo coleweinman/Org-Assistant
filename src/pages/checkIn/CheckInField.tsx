@@ -6,12 +6,15 @@ interface CheckInFieldProps extends FormField {
   setValue: (newValue: string) => void
 }
 
-const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, label, options, value, setValue }) => {
-  // Load previously stored value on initial render
-  // React.useEffect(() => {
-  //   setValue(window.localStorage.getItem(id) ?? "");
-  // }, [setValue, id]);
-
+const CheckInField: React.FC<CheckInFieldProps> = ({
+   id,
+   required,
+   inputType,
+   label,
+   options,
+   value,
+   setValue
+}) => {
   switch (inputType) {
     case InputType.TEXT:
     case InputType.EMAIL:
@@ -26,6 +29,7 @@ const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, la
         />
       );
     case InputType.DROPDOWN:
+      console.log(value);
       return (
         <select
           required={required}
@@ -34,7 +38,12 @@ const CheckInField: React.FC<CheckInFieldProps> = ({ id, required, inputType, la
           value={value}
           onChange={(e) => setValue(e.target.value)}
         >
-          {options?.map((option) => <option key={option} value={option} label={option}>{option}</option>)}
+          <option value={""} disabled>{label.toLowerCase()}</option>
+          {options?.map((option) => (
+            <option key={option} value={option}>
+              {option.toLowerCase()}
+            </option>
+          ))}
         </select>
       )
     default:

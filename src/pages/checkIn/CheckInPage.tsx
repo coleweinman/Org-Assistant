@@ -10,17 +10,16 @@ import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import "../../stylesheets/CheckInPage.scss";
 import { isEmail, isFilled } from "../../helpers/Forms";
 
-type FormState = {
-	[key: string]: string
-};
-
 interface CheckInPageProps {
 	db: Firestore,
-};
+}
 
 const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 	const [event, setEvent] = React.useState<OrgEvent | null>(null);
-	const [formData, setFormData] = React.useState<FormState>({});
+	const [
+		formData,
+		setFormData
+	] = React.useState<Record<string, string>>({});
 	const [error, setError] = React.useState<string>("");
 
 	let { orgId, eventId } = useParams();
@@ -33,12 +32,8 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 			eventId!,
 			false, (event) => setEvent(event)
 		);
-		for (const { id, inputType, options } of CheckInFields) {
-			let defaultValue = "";
-			if (inputType === InputType.DROPDOWN) {
-				defaultValue = (options ?? [])[0];
-			}
-			setFieldValue(id, window.localStorage.getItem(id) ?? defaultValue);
+		for (const { id } of CheckInFields) {
+			setFieldValue(id, window.localStorage.getItem(id) ?? "");
 		}
 	}, [db, orgId, eventId]);
 
@@ -51,25 +46,23 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 
 	const validate = () => {
 		for (const { id, inputType } of CheckInFields) {
-			let invalid = true;
 			if (!isFilled(formData[id])) {
 				setError("Please fill out all fields.");
+				return false;
 			} else if (inputType === InputType.EMAIL && !isEmail(formData[id])) {
 				setError("Please enter a valid email address.");
-			} else {
-				invalid = false;
-			}
-			if (invalid)
 				return false;
+			}
 		}
 		setError("");
 		return true;
 	}
 
-	const submit: React.FormEventHandler = async (e) => {
+	const submit: React.FormEventHandler<HTMLFormElement> = async (
+		e
+	) => {
 		e.preventDefault();
-		if (!validate())
-			return;
+		if (!validate()) return;
 		let checkIn: CheckIn = {
 			...formData,
 			eventId: eventId!,
@@ -79,19 +72,14 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 			window.localStorage.setItem(id, formData[id]);
 		}
 		const success = await submitCheckIn(db, orgId!, eventId!, checkIn);
-		if (success)
+		if (success) {
 			navigate("submitted");
-		else
+		} else {
 			setError("You already checked in!");
+		}
 	};
 
-	if (event === null) {
-		return (
-			<div className={"page check-in-page"} />
-		);
-	}
-
-	return (
+	return event ? (
 		<div className={"page check-in-page"}>
 			<h1 className={"header"}>{event.name}</h1>
 			<form className={"check-in-form"} noValidate onSubmit={submit}>
@@ -112,6 +100,8 @@ const CheckInPage: React.FC<CheckInPageProps> = ({ db }) => {
 				{error.length > 0 && <p className={"error"}>{error}</p>}
 			</form>
 		</div>
+	) : (
+		<div className={"page check-in-page"} />
 	);
 }
 

@@ -6,18 +6,50 @@ export enum InputType {
   DROPDOWN = "dropdown"
 }
 
-export type FormField = {
+type BaseField = {
   id: string,
-  required: boolean,
   label: string,
-  inputType: InputType,
-  options?: string[]
-}
+  required: boolean
+};
+
+type TextField = BaseField & {
+  inputType: InputType.TEXT | InputType.EMAIL
+};
+
+type OptionsField = BaseField & {
+  inputType: InputType.RADIO | InputType.CHECKBOX | InputType.DROPDOWN;
+  options: string[];
+};
+
+export type FormField = TextField | OptionsField;
 
 export const CheckInFields: FormField[] = [
   { id: "name", label: "Name", required: true, inputType: InputType.TEXT },
   { id: "email", label: "Email", required: true, inputType: InputType.EMAIL },
-  { id: "schoolId", label: "UT EID", required: true, inputType: InputType.TEXT },
-  { id: "year", label: "Year", required: true, inputType: InputType.DROPDOWN, options: ["Freshman", "Sophmore", "Junior", "Senior", "Super Senior", "Grad Student"]},
-  { id: "discord", label: "Discord", required: false, inputType: InputType.TEXT },
+  {
+    id: "schoolId",
+    label: "UT EID",
+    required: true,
+    inputType: InputType.TEXT
+  },
+  {
+    id: "year",
+    label: "Year",
+    required: true,
+    inputType: InputType.DROPDOWN,
+    options: [
+      "Freshman",
+      "Sophomore",
+      "Junior",
+      "Senior",
+      "Super senior",
+      "Grad student"
+    ]
+  },
+  {
+    id: "discord",
+    label: "Discord",
+    required: false,
+    inputType: InputType.TEXT
+  },
 ];
