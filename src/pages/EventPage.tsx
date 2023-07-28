@@ -66,7 +66,8 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
           <h2 className="section-title">Event Settings</h2>
           <button
             className="view-check-in"
-            onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
+            onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
+          >
             View check-in page
             <span className="new-tab-icon">
             <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />

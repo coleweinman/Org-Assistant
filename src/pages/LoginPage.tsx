@@ -67,13 +67,15 @@ const LoginPage: React.FunctionComponent = () => {
           Email Address
           <input
             type="email" placeholder="enter your email here"
-            onChange={handleEmailUpdate} />
+            onChange={handleEmailUpdate}
+          />
         </label>
         <label>
           Password
           <input
             type="password" placeholder="enter your password here"
-            onChange={handlePasswordUpdate} />
+            onChange={handlePasswordUpdate}
+          />
         </label>
         <button type="submit" className={isLoading ? "loading" : ""}>
           Sign In
