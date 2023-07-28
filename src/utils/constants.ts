@@ -1,6 +1,6 @@
 import { InputType, Modality } from "./enums";
 import type { Attendee, CheckIn, ColumnData, FormFieldType, NavLink, OrgEvent } from "./types";
-import { timestampToDate } from "./helpers";
+import { getColumnsFromFields, timestampToDate } from "./helpers";
 import { Dayjs } from "dayjs";
 
 export const INPUT_DATE_FORMAT = "M/DD h:mma";
@@ -60,18 +60,6 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
-// name: eventName,
-//   seasonId: org!.currentSeasonId,
-//   imageUrl: imageUrl,
-//   description: description,
-//   location: location,
-//   startTime: Timestamp.fromMillis(startTime!.valueOf()),
-//   endTime: Timestamp.fromMillis(endTime!.valueOf()),
-//   modality: modality,
-//   virtualEventUrl: virtualEventUrl,
-//   newAttendeeCount: 0,
-//   attendeeCount: 0,
-
 export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
@@ -109,26 +97,12 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
 ];
 
 export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
-  ...CHECK_IN_FIELDS.map(({ id, label }) => (
-    {
-      id,
-      label,
-      getDisplayValue: (value: string) => value,
-    }
-  )),
+  ...getColumnsFromFields(CHECK_IN_FIELDS),
   { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate },
 ];
 
 export const EVENT_COLUMNS: ColumnData<OrgEvent>[] = [
-  { id: "name", label: "Name", getDisplayValue: (value) => value },
-  { id: "location", label: "Location", getDisplayValue: (value) => value },
-  { id: "startTime", label: "Start", getDisplayValue: timestampToDate },
-  { id: "endTime", label: "End", getDisplayValue: timestampToDate },
+  ...getColumnsFromFields(CREATE_EVENT_FIELDS)
+    .filter(({ id }) => ["name", "location", "startTime", "endTime"].includes(id)),
   { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value },
 ];
-
-export const MODALITY_DISPLAY: Record<Modality, string> = {
-  [Modality.IN_PERSON]: "In-Person",
-  [Modality.VIRTUAL]: "Virtual",
-  [Modality.HYBRID]: "Hybrid",
-};

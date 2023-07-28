@@ -7,6 +7,11 @@ export type FormDataType = FormDataType;
 export type FormValue<T extends FormDataType> = FormFieldWithValue<T>["value"];
 export type FormState<T extends FormDataType> = Partial<Record<keyof T, FormValue<T>>>
 
+export type FormOption = {
+  id: string,
+  label: string
+};
+
 type BaseField<T extends FormDataType> = {
   id: keyof T,
   label: string,
@@ -25,12 +30,12 @@ type DateFieldType<T extends FormDataType> = BaseField<T> & {
 
 type SingleOptionsFieldType<T extends FormDataType> = BaseField<T> & {
   inputType: InputType.RADIO | InputType.CHECKBOX | InputType.DROPDOWN,
-  options: { id: string, label: string }[],
+  options: FormOption[],
 };
 
 type MultiOptionsFieldType<T extends FormDataType> = BaseField<T> & {
   inputType: InputType.RADIO | InputType.CHECKBOX | InputType.DROPDOWN,
-  options: { id: string, label: string }[],
+  options: FormOption[],
 };
 
 export type FormFieldType<T extends FormDataType> =

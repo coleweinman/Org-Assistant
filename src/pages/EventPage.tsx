@@ -1,5 +1,5 @@
 import React from "react";
-import { Firestore } from "firebase/firestore";
+import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
@@ -7,9 +7,10 @@ import { getCheckIns, getEvent } from "../utils/managers";
 import CheckInTable from "../components/CheckInTable";
 import { Pie, PieChart, Tooltip } from "recharts";
 import type { CheckIn, EventPageParams, OrgEvent, YearGroup } from "../utils/types";
-import { copyCheckIns } from "../utils/helpers";
+import { copyCheckIns, getDisplayValue, getYearGroups } from "../utils/helpers";
 import loading from "../images/loader.svg";
 import "../stylesheets/EventPage.scss";
+import { CREATE_EVENT_FIELDS } from "../utils/constants";
 
 type EventPageProps = {
   db: Firestore,
@@ -30,24 +31,15 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
     getCheckIns(db, orgId!, eventId!, onCheckInsUpdate)
   ), [db, orgId, eventId]);
 
-  React.useEffect(() => {
-    const yearMap: Map<string, number> = new Map();
-    for (const checkIn of checkIns ?? []) {
-      if (!yearMap.has(checkIn.year)) {
-        yearMap.set(checkIn.year, 0);
-      }
-      yearMap.set(checkIn.year, yearMap.get(checkIn.year)! + 1);
-    }
-    const newYearGroups: YearGroup[] = [];
-    Array.from(yearMap.entries())
-      .map((e) => newYearGroups.push({ year: e[0], quantity: e[1] }));
-    setYearGroups(newYearGroups);
-  }, [checkIns]);
-
   // Listen and unsubscribe from event details
   React.useEffect(() => (
     getEvent(db, orgId!, eventId!, true, onEventUpdate)
   ), [db, orgId, eventId]);
+
+  // Get data for chart
+  React.useEffect(() => {
+    setYearGroups(getYearGroups(checkIns ?? []));
+  }, [checkIns]);
 
   if (!event) {
     return (
@@ -64,6 +56,20 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         <h1 className="header">{event.name}</h1>
         <div className="section event-settings">
           <h2 className="section-title">Event Settings</h2>
+          <table className="event-data event-details-table">
+            <tbody>
+              {CREATE_EVENT_FIELDS.map((field) => (
+                <tr>
+                  <th>{field.label}:</th>
+                  <td>
+                    {event[field.id]
+                      ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
+                      : "N/A"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <button
             className="view-check-in"
             onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
@@ -76,7 +82,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         </div>
         <div className="section event-stats">
           <h2 className="section-title">Event Statistics</h2>
-          <table className="attendee-table">
+          <table className="event-data attendee-table">
             <tbody>
               <tr>
                 <th>New:</th>
@@ -100,7 +106,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
             nameKey="year"
             dataKey="quantity"
             isAnimationActive={false}
-            data={yearGroups ?? []}
+            data={yearGroups}
             cx="50%"
             cy="50%"
             outerRadius={80}

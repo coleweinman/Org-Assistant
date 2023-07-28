@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 import dayjs, { Dayjs } from "dayjs";
-import { CHECK_IN_COLUMNS, DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./constants";
+import { CHECK_IN_COLUMNS, CHECK_IN_FIELDS, DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./constants";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { AuthError, AuthErrorCodes } from "firebase/auth";
@@ -10,8 +10,12 @@ import type {
   FormDataType,
   FormFieldType,
   FormFieldWithValue,
+  FormOption,
   FormState,
   FormValue,
+  MultiOptionsFieldType,
+  SingleOptionsFieldType,
+  YearGroup,
 } from "./types";
 import type { ColumnDef, DeepKeys } from "@tanstack/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
@@ -93,28 +97,30 @@ export function getFormFieldWithValue<T extends FormDataType>(
 }
 
 export function getFormError<T extends FormDataType>(fields: FormFieldType<T>[], state: FormState<T>): string | null {
-  for (const { id, inputType, required, validate } of fields) {
-    const value = state[id];
-    if (required && !isFieldFilled(inputType, value)) {
+  for (const field of fields) {
+    const value = state[field.id];
+    if (field.required && !isFieldFilled(field.inputType, value, field)) {
       return "Please fill out all required fields";
-    }
-    if (!value) {
+    } else if (!value) {
       return null;
-    }
-    if (inputType === InputType.EMAIL && !isValidEmail(value as string)) {
+    } else if (field.inputType === InputType.EMAIL && !isValidEmail(value as string)) {
       return "Please enter a valid email address";
-    } else if (inputType === InputType.URL && !isValidUrl(value as string)) {
+    } else if (field.inputType === InputType.URL && !isValidUrl(value as string)) {
       return "Please enter a valid URL";
-    } else if (inputType === InputType.DATE && !isValidDate(value as Dayjs)) {
+    } else if (field.inputType === InputType.DATE && !isValidDate(value as Dayjs)) {
       return "Please enter a date in the future";
-    } else if (validate && validate(state)) {
-      return validate(state);
+    } else if (field.validate && field.validate(state)) {
+      return field.validate(state);
     }
   }
   return null;
 }
 
-export function isFieldFilled<T extends FormDataType>(inputType: InputType, value: FormValue<T> | undefined): boolean {
+export function isFieldFilled<T extends FormDataType>(
+  inputType: InputType,
+  value: FormValue<T> | undefined,
+  field?: FormFieldType<T>,
+): boolean {
   if (!value) {
     return false;
   }
@@ -122,11 +128,14 @@ export function isFieldFilled<T extends FormDataType>(inputType: InputType, valu
     case InputType.TEXT:
     case InputType.EMAIL:
     case InputType.URL:
-    case InputType.DROPDOWN:
-    case InputType.RADIO:
       return (
         value as string
       ).length > 0;
+    case InputType.DROPDOWN:
+    case InputType.RADIO:
+      return !!(
+        field! as SingleOptionsFieldType<T>
+      ).options.find(({ id }) => id === value as string);
     case InputType.CHECKBOX:
       return (
         value as string[]
@@ -154,6 +163,10 @@ export function isValidDate(date: Dayjs) {
 // Table helpers //
 ///////////////////
 
+function getLabelFromId(value: string, options: FormOption[]): string {
+  return options.find(({ id }) => id === value)?.label ?? value;
+}
+
 export function getColumnDef<T extends FormDataType>(columns: ColumnData<T>[]): ColumnDef<T, any>[] {
   const columnHelper = createColumnHelper<T>();
   return columns.map(({ id, label, getDisplayValue }) => (
@@ -164,10 +177,72 @@ export function getColumnDef<T extends FormDataType>(columns: ColumnData<T>[]): 
   ));
 }
 
+export function getDisplayValue<T extends FormDataType>(
+  value: string | string[] | Timestamp,
+  field: FormFieldType<T>,
+): string {
+  switch (field.inputType) {
+    case InputType.DROPDOWN:
+    case InputType.RADIO:
+      return getLabelFromId(
+        value as string,
+        (
+          field as SingleOptionsFieldType<T>
+        ).options,
+      );
+    case InputType.CHECKBOX:
+      return (
+        (
+          value as string[]
+        ).map((selected) => getLabelFromId(
+          selected,
+          (
+            field as MultiOptionsFieldType<T>
+          ).options,
+        )).join(", ")
+      );
+    case InputType.DATE:
+      return timestampToDate(value as Timestamp);
+    default:
+      return value as string;
+  }
+}
+
+export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldType<T>[]): ColumnData<T>[] {
+  return fields.map((field) => (
+    {
+      id: field.id,
+      label: field.label,
+      getDisplayValue: (value: string | string[] | Timestamp) => getDisplayValue(value, field),
+    }
+  ));
+}
+
 export async function copyCheckIns(checkIns: CheckIn[]) {
   const clipboardRows: string[] = [CHECK_IN_COLUMNS.map(({ label }) => label).join("\t")];
   for (const checkIn of checkIns) {
     clipboardRows.push(CHECK_IN_COLUMNS.map(({ id }) => checkIn[id]).join("\t"));
   }
   await navigator.clipboard.writeText(clipboardRows.join("\n"));
+}
+
+////////////////////////
+// Event page helpers //
+////////////////////////
+
+export function getYearGroups(checkIns: CheckIn[]): YearGroup[] {
+  const yearQuantities: Record<string, number> = {};
+  const yearOptions = (
+    CHECK_IN_FIELDS.find(({ id }) => id === "year")! as SingleOptionsFieldType<CheckIn>
+  ).options;
+  for (const { year } of checkIns) {
+    const label = getLabelFromId(year, yearOptions);
+    yearQuantities[label] = (
+      yearQuantities[label] ?? 0
+    ) + 1;
+  }
+  return Object.entries(yearQuantities)
+    .map(([year, quantity]) => (
+      { year, quantity }
+    ));
 }
