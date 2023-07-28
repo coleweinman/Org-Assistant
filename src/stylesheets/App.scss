@@ -16,7 +16,7 @@ h1 {
   margin: 0;
 }
 
-input[type=text], input[type=number], input[type=email], input[type=password] {
+input[type=text], input[type=number], input[type=email], input[type=password], input[type=url] {
   padding: 20px;
   font-family: constants.$font-family;
   border-radius: constants.$border-radius;
@@ -123,6 +123,10 @@ form {
     flex-direction: column;
     font-weight: constants.$extra-bold;
     margin: 5px 0;
+  }
+
+  .error {
+    color: constants.$error-color;
   }
 }
 

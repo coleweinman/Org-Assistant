@@ -1,24 +1,22 @@
-import React, {
-  FocusEventHandler,
-  HTMLProps
-} from "react";
-import { InputType } from "../helpers/FormFields";
+import React, { FocusEventHandler, HTMLProps } from "react";
+import { InputType } from "../utils/enums";
 import dayjs, { Dayjs } from "dayjs";
+import { DATE_FORMAT, INPUT_DATE_FORMAT } from "../utils/constants";
 
-const INPUT_DATE_FORMAT = "M/DD h:mma";
-const DATE_FORMAT = "M/DD/YYYY h:mma";
-
-type DateTimePickerProps = {
+type DateTimePickerProps = Omit<HTMLProps<HTMLInputElement>, "value" | "onChange"> & {
   value: Dayjs | null,
-  onChange: (value: Dayjs | null) => void
-} & Omit<HTMLProps<HTMLInputElement>, "value" | "onChange">;
+  onChange: (value: Dayjs | null) => void,
+};
 
-const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({ value, onChange, placeholder = "", ...props }) => {
+const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({
+  value,
+  onChange,
+  placeholder = "",
+  ...props
+}) => {
   const [rawValue, setRawValue] = React.useState<string>("");
 
-  const isValidDate = (date: Dayjs) => (
-    date.isValid() && date.isSameOrAfter(dayjs(), "days")
-  );
+  const isValidDate = (date: Dayjs) => date.isValid() && date.isSameOrAfter(dayjs(), "days");
 
   const validate: FocusEventHandler<HTMLInputElement> = () => {
     let date = dayjs(rawValue, [DATE_FORMAT, INPUT_DATE_FORMAT]);
@@ -26,15 +24,11 @@ const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({ value, o
     if (date.isBefore(today, "years")) {
       date = date.year(today.year());
     }
-    if (!isValidDate(date)) {
-      onChange(null);
-    } else {
-      onChange(date);
-    }
-  }
+    onChange(isValidDate(date) ? date : null);
+  };
 
   React.useEffect(() => {
-    setRawValue(value ? value.format(DATE_FORMAT) : "");
+    setRawValue(value?.format(DATE_FORMAT) ?? "");
   }, [value]);
 
   return (
@@ -46,7 +40,7 @@ const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({ value, o
       onChange={(e) => setRawValue(e.target.value)}
       value={rawValue}
     />
-  )
+  );
 };
 
 export default DateTimePicker;

@@ -1,35 +1,24 @@
-import React from 'react';
+import React from "react";
+import { Route, Routes } from "react-router-dom";
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { Outlet, Route, Routes } from 'react-router-dom';
-import LoginPage from './pages/login/LoginPage';
-import HomePage from './pages/home/HomePage';
-import { AuthProvider } from './AuthProvider';
-import AuthGuard from './AuthGuard';
-import OrgPage from './pages/org/OrgPage';
-import NavigationBar from './components/NavigationBar';
-import CheckInPage from './pages/checkIn/CheckInPage';
-import EventPage from './pages/events/EventPage';
+import { AuthProvider } from "./components/AuthProvider";
+import AuthGuard from "./components/AuthGuard";
+import Layout from "./components/Layout";
+import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
+import OrgPage from "./pages/OrgPage";
+import CheckInPage from "./pages/CheckInPage";
+import EventPage from "./pages/EventPage";
+import SubmitPage from "./components/SubmitPage";
+import CreateEventPage from "./pages/CreateEventPage";
+import { FIREBASE_CONFIG } from "./utils/constants";
 import "./stylesheets/App.scss";
-import SubmitPage from './pages/checkIn/SubmitPage';
-import CreateEventPage from './pages/events/CreateEventPage';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBlMx0f35Ia49khVmeYFH6dmmpJEx2uMC0",
-  authDomain: "org-assistant.firebaseapp.com",
-  projectId: "org-assistant",
-  storageBucket: "org-assistant.appspot.com",
-  messagingSenderId: "45876267496",
-  appId: "1:45876267496:web:26dfbcf9656ffc93117c5d",
-  measurementId: "G-73BSH3ZW4G"
-};
-
-function App() {
+const App: React.FunctionComponent = () => {
   // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  const app = initializeApp(FIREBASE_CONFIG);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
@@ -37,56 +26,34 @@ function App() {
     <AuthProvider auth={auth}>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={
-            <AuthGuard>
-              <HomePage db={db} />
-            </AuthGuard>
-          } />
+          <Route
+            path="/"
+            element={
+              <AuthGuard>
+                <HomePage db={db} />
+              </AuthGuard>
+            }
+          />
           <Route path="login" element={<LoginPage />} />
           <Route path="orgs">
             <Route
               path=":orgId"
               element={
                 <AuthGuard>
-                  <OrgPage db={db} seasonId={"Spring 2023"} />
+                  <OrgPage db={db} seasonId="Spring 2023" />
                 </AuthGuard>
               }
             >
             </Route>
           </Route>
-          <Route path="orgs/:orgId/checkin/:eventId"
-            element={
-              <CheckInPage db={db} />
-            }
-          />
-          <Route path="orgs/:orgId/checkin/:eventId/submitted"
-            element={
-              <SubmitPage/>
-            }
-          />
-          <Route path="orgs/:orgId/events/:eventId"
-            element={
-              <EventPage db={db} />
-            }
-          />
-          <Route path="orgs/:orgId/createEvent"
-            element={
-              <CreateEventPage db={db} />
-            }
-          />
+          <Route path="orgs/:orgId/checkin/:eventId" element={<CheckInPage db={db} />} />
+          <Route path="orgs/:orgId/checkin/:eventId/submitted" element={<SubmitPage />} />
+          <Route path="orgs/:orgId/events/:eventId" element={<EventPage db={db} />} />
+          <Route path="orgs/:orgId/createEvent" element={<CreateEventPage db={db} />} />
         </Route>
       </Routes>
     </AuthProvider>
   );
-}
-
-function Layout() {
-  return (
-    <div>
-      <NavigationBar />
-      <Outlet />
-    </div>
-  );
-}
+};
 
 export default App;

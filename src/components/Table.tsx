@@ -1,54 +1,75 @@
 import React from "react";
 import {
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  flexRender,
-  getPaginationRowModel,
   ColumnDef,
-  SortingState
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  Header,
+  SortingState,
+  useReactTable,
 } from "@tanstack/react-table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
 import "../stylesheets/Table.scss";
 
-interface TableProps<T> {
+type TableProps<T> = {
   data: T[] | null,
   columns: ColumnDef<T, any>[],
   tableName: string,
   tableTitle: string,
   onClick?: (row: T) => void,
   onCreate?: () => void,
-  initialSorting?: SortingState
+  initialSorting?: SortingState,
 }
 
-const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClick, onCreate, initialSorting = [] }: TableProps<T>) => {
+const Table = <T extends unknown>({
+  data,
+  columns,
+  tableName,
+  tableTitle,
+  onClick,
+  onCreate,
+  initialSorting = [],
+}: TableProps<T>): React.ReactElement => {
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
-
-  console.log(initialSorting);
 
   const table = useReactTable<T>({
     data: data || [],
     columns,
     state: {
-      sorting
+      sorting,
     },
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel()
+    getSortedRowModel: getSortedRowModel(),
   });
+
+  const getIconClass = (header: Header<T, unknown>): string => {
+    switch (header.column.getIsSorted()) {
+      case "asc":
+        return "up";
+      case "desc":
+        return "down";
+      default:
+        return "invisible";
+    }
+  };
 
   return (
     <div className={`section table-container ${tableName}-container`}>
       <table className={tableName}>
         <thead>
           <tr>
-            <th className={"section-title-container"} colSpan={columns.length}>
-              <h2 className={"section-title"}>{tableTitle}</h2>
+            <th className="section-title-container" colSpan={columns.length}>
+              <h2 className="section-title">{tableTitle}</h2>
               {onCreate && (
-                <button className={"blue-button action-button"} onClick={onCreate}>
+                <button
+                  className="blue-button action-button"
+                  onClick={onCreate}
+                >
                   <FontAwesomeIcon icon={solid("pen-to-square")} />
                 </button>
               )}
@@ -65,17 +86,15 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
                   <div>
                     <FontAwesomeIcon
                       icon={solid("square")}
-                      className={"sorting-arrow invisible"}
+                      className="sorting-arrow invisible"
                     />
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                     <FontAwesomeIcon
                       icon={solid("arrow-up")}
-                      className={`sorting-arrow ${
-                        {asc: "up", desc: "down"}[header.column.getIsSorted() as string] ?? "invisible"
-                      }`}
+                      className={`sorting-arrow ${getIconClass(header)}`}
                     />
                   </div>
                 </th>
@@ -85,11 +104,11 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
         </thead>
         <tbody>
           {!data || data.length === 0 ? (
-            <tr className={"loading-row"}>
+            <tr className="loading-row">
               <td colSpan={columns.length}>
                 {data
                   ? "No data to display"
-                  : <img src={loading} alt={"Loading..."} />
+                  : <img className="loader" src={loading} alt="Loading..." />
                 }
               </td>
             </tr>
@@ -97,7 +116,8 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
             <tr
               key={row.id}
               className={onClick ? "clickable" : ""}
-              onClick={onClick ? () => onClick(row.original) : () => {}}
+              onClick={onClick ? () => onClick(row.original) : () => {
+              }}
             >
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id}>
@@ -110,12 +130,12 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
         {data && (
           <tfoot>
             <tr>
-              <td className={"total-count"}>
-                Total: {!data ? 0 : data.length}
+              <td className="total-count">
+                Total: {data.length}
               </td>
               <td colSpan={columns.length - 2} />
-              <td className={"buttons-container"}>
-                <div className={"buttons-container"}>
+              <td className="buttons-container">
+                <div className="buttons-container">
                   <button
                     onClick={() => table.setPageIndex(0)}
                     disabled={!table.getCanPreviousPage()}
@@ -129,11 +149,11 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
                   >
                     <FontAwesomeIcon icon={solid("chevron-left")} />
                   </button>
-                  <div className={"page-input"}>
+                  <div className="page-input">
                     <input
-                      type={"number"}
+                      type="number"
                       value={table.getState().pagination.pageIndex + 1}
-                      className={"no-arrows"}
+                      className="no-arrows"
                       onChange={({ target }) => {
                         let page = Number(target.value) - 1;
                         if (!isNaN(page)) {
@@ -169,6 +189,6 @@ const Table = <T extends unknown>({ data, columns, tableName, tableTitle, onClic
       </table>
     </div>
   );
-}
+};
 
 export default Table;
