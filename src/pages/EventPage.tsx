@@ -5,12 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { getCheckIns, getEvent } from "../utils/managers";
 import CheckInTable from "../components/CheckInTable";
-import { Pie, PieChart, Tooltip } from "recharts";
 import type { CheckIn, EventPageParams, OrgEvent, YearGroup } from "../utils/types";
-import { copyCheckIns, getDisplayValue, getYearGroups } from "../utils/helpers";
+import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/constants";
+import { getDisplayValue, getYearGroups } from "../utils/helpers";
 import loading from "../images/loader.svg";
 import "../stylesheets/EventPage.scss";
-import { CREATE_EVENT_FIELDS } from "../utils/constants";
+import EventChart from "../components/EventChart";
 
 type EventPageProps = {
   db: Firestore,
@@ -55,65 +55,52 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         </button>
         <h1 className="header">{event.name}</h1>
         <div className="section event-settings">
-          <h2 className="section-title">Event Settings</h2>
-          <table className="event-data event-details-table">
-            <tbody>
-              {CREATE_EVENT_FIELDS.map((field) => (
-                <tr>
-                  <th>{field.label}:</th>
-                  <td>
-                    {event[field.id]
-                      ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
-                      : "N/A"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <button
-            className="view-check-in"
-            onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
-          >
-            View check-in page
-            <span className="new-tab-icon">
-            <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
-          </span>
-          </button>
+          <div className="column">
+            <h2 className="section-title">Event Settings</h2>
+            <table className="event-data event-details-table">
+              <tbody>
+                {CREATE_EVENT_FIELDS.map((field) => (
+                  <tr>
+                    <th>{field.label}:</th>
+                    <td>
+                      {event[field.id]
+                        ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="event-action-buttons">
+            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
+              <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
+            </button>
+            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
+              <FontAwesomeIcon icon={solid("pen-to-square")} />
+            </button>
+            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
+              <FontAwesomeIcon icon={solid("trash")} />
+            </button>
+          </div>
         </div>
         <div className="section event-stats">
-          <h2 className="section-title">Event Statistics</h2>
-          <table className="event-data attendee-table">
-            <tbody>
-              <tr>
-                <th>New:</th>
-                <td>{event.newAttendeeCount}</td>
-              </tr>
-              <tr>
-                <th>Returning:</th>
-                <td>{event.attendeeCount - event.newAttendeeCount}</td>
-              </tr>
-              <tr>
-                <th>Total Attendees:</th>
-                <td>{event.attendeeCount}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className={"content"}>
+            <h2 className="section-title">Event Statistics</h2>
+            <table className="event-data attendee-table">
+              <tbody>
+                {EVENT_STATISTICS_CATEGORIES.map(({ id, label, getDisplayValue }) => (
+                  <tr key={id}>
+                    <th>{label}:</th>
+                    <td>{getDisplayValue(event)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <EventChart yearGroups={yearGroups} />
         </div>
-        <button onClick={() => copyCheckIns(checkIns ?? [])}>COPY</button>
-        <CheckInTable checkIns={checkIns} />
-        <PieChart width={400} height={400}>
-          <Pie
-            nameKey="year"
-            dataKey="quantity"
-            isAnimationActive={false}
-            data={yearGroups}
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
-            label
-          />
-          <Tooltip />
-        </PieChart>
+        <CheckInTable eventName={event.name} checkIns={checkIns} />
       </div>
     );
   }

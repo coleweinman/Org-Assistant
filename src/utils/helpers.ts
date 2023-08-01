@@ -218,12 +218,16 @@ export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldTy
   ));
 }
 
-export async function copyCheckIns(checkIns: CheckIn[]) {
+export function getCheckInsCsv(checkIns: CheckIn[]) {
   const clipboardRows: string[] = [CHECK_IN_COLUMNS.map(({ label }) => label).join("\t")];
   for (const checkIn of checkIns) {
-    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id }) => checkIn[id]).join("\t"));
+    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id, getDisplayValue }) => getDisplayValue(checkIn[id])).join("\t"));
   }
-  await navigator.clipboard.writeText(clipboardRows.join("\n"));
+  return clipboardRows.join("\n");
+}
+
+export async function copyCheckIns(checkIns: CheckIn[]) {
+  await navigator.clipboard.writeText(getCheckInsCsv(checkIns));
 }
 
 ////////////////////////

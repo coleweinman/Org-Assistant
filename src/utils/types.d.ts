@@ -1,7 +1,9 @@
+import React from "react";
 import { InputType, Modality } from "./enums";
-import { User, UserCredential } from "firebase/auth";
+import type { User, UserCredential } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { Dayjs } from "dayjs";
+import type { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 
 export type FormDataType = FormDataType;
 export type FormValue<T extends FormDataType> = FormFieldWithValue<T>["value"];
@@ -132,6 +134,12 @@ export type ColumnData<T extends FormDataType> = {
   getDisplayValue: (value: typeof T[keyof T]) => string,
 };
 
+export type CategoryData<T extends FormDataType> = {
+  id: string,
+  label: string,
+  getDisplayValue: (state: T) => string,
+};
+
 export type OrgPageParams = {
   orgId: string,
 };
@@ -149,4 +157,11 @@ export type CreatEventPageParams = {
 export type EventPageParams = {
   orgId: string,
   eventId: string,
+};
+
+export type ActionButton = {
+  icon: IconDefinition,
+  onClick: () => void,
+} | {
+  element: React.ReactElement
 };

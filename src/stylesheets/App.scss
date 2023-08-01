@@ -108,8 +108,10 @@ button {
 }
 
 .blue-button {
+  padding: 0;
   background-color: transparent;
   border: none;
+  color: constants.$font-color;
 
   &:hover {
     background-color: transparent !important;
@@ -127,6 +129,17 @@ form {
 
   .error {
     color: constants.$error-color;
+  }
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .icon {
+      font-size: constants.$icon-size;
+      margin-left: 10px;
+    }
   }
 }
 
@@ -150,5 +163,32 @@ form {
 
   .section-title {
     margin: 0 0 20px 0;
+  }
+}
+
+.toast {
+  transition: constants.$transition;
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  padding: 20px;
+  background-color: constants.$toast-color;
+  color: constants.$accent-font-color;
+  border-radius: constants.$border-radius;
+  min-width: constants.$toast-width;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+
+  &.success .icon {
+    color: constants.$success-color
+  }
+
+  &.error .icon {
+    color: constants.$error-color;
+  }
+
+  &.hidden {
+    transform: translateY(calc(100% + 20px));
   }
 }

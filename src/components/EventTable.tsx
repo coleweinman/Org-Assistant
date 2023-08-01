@@ -4,6 +4,7 @@ import Table from "./Table";
 import { getColumnDef } from "../utils/helpers";
 import type { OrgEvent } from "../utils/types";
 import { EVENT_COLUMNS } from "../utils/constants";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
 type EventTableProps = {
   events: OrgEvent[] | null,
@@ -19,8 +20,8 @@ const EventTable: React.FunctionComponent<EventTableProps> = ({ events }) => {
       columns={columns}
       tableName="event-table"
       tableTitle="Events"
-      onClick={({ id }) => navigate(`events/${id}`)}
-      onCreate={() => navigate("createEvent")}
+      onRowClick={({ id }) => navigate(`events/${id}`)}
+      actions={[{ icon: solid("pen-to-square"), onClick: () => navigate("createEvent") }]}
       initialSorting={[{ id: "startTime", desc: true }]}
     />
   );

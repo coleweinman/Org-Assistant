@@ -1,7 +1,12 @@
-import { InputType, Modality } from "./enums";
-import type { Attendee, CheckIn, ColumnData, FormFieldType, NavLink, OrgEvent } from "./types";
+import { IconType, InputType, Modality } from "./enums";
+import type { Attendee, CategoryData, CheckIn, ColumnData, FormFieldType, NavLink, OrgEvent } from "./types";
 import { getColumnsFromFields, timestampToDate } from "./helpers";
 import { Dayjs } from "dayjs";
+import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+
+export const TOAST_TIMEOUT = 5000;
+export const TOAST_TRANSITION_TIME = 200;
 
 export const INPUT_DATE_FORMAT = "M/DD h:mma";
 export const DATE_FORMAT = "M/DD/YYYY h:mma";
@@ -24,6 +29,11 @@ const MODALITY_OPTIONS: { id: Modality, label: string }[] = [
   { id: Modality.VIRTUAL, label: "Virtual" },
   { id: Modality.HYBRID, label: "Hybrid" },
 ];
+
+export const ICON_TYPE_TO_ICON: Record<IconType, IconDefinition> = {
+  [IconType.SUCCESS]: solid("check-circle"),
+  [IconType.ERROR]: solid("xmark-circle"),
+};
 
 export const NAVIGATION_LINKS: NavLink[] = [
   { name: "Home", link: "/" },
@@ -88,6 +98,18 @@ export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
     inputType: InputType.URL,
     showConditional: ({ modality }) => modality !== Modality.IN_PERSON,
   },
+];
+
+export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEvent>[] = [
+  { id: "new", label: "New", getDisplayValue: ({ newAttendeeCount }: OrgEvent) => newAttendeeCount.toString() },
+  {
+    id: "returning",
+    label: "Returning",
+    getDisplayValue: ({ attendeeCount, newAttendeeCount }: OrgEvent) => (
+      attendeeCount - newAttendeeCount
+    ).toString(),
+  },
+  { id: "total", label: "Total Attendees", getDisplayValue: ({ attendeeCount }: OrgEvent) => attendeeCount.toString() },
 ];
 
 export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [

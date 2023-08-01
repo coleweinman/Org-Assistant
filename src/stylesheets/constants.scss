@@ -15,10 +15,12 @@ $light-blue: #228be6;
 $dark-blue: #1a67a9;
 $yellow: #ffce2b;
 $dark-yellow: #b3921f;
+$dark-grey: #232323;
 $grey: #dfdfdf;
 $medium-light-grey: #f0f0f0;
 $light-grey: #f9f9f9;
 $red: #ff4949;
+$green: #63ff63;
 
 $font-color: $black;
 $accent-font-color: $white;
@@ -30,11 +32,14 @@ $error-color: $red;
 $background: $medium-light-grey;
 $accent-background: $white;
 $accent-background-hover: $light-grey;
+$toast-color: $dark-grey;
+$success-color: $green;
 
 $shadow-style: inset 0 4px $grey;
 $border-style: 2px solid $font-color;
 $thick-border-style: 7px solid $font-color;
 $border-radius: 10px;
+$toast-width: 250px;
 
 $transition: all 0.2s ease;
 
