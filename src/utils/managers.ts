@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   DocumentData,
   Firestore,
@@ -11,7 +12,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import type { Attendee, CheckIn, Org, OrgEvent } from "./types";
+import type { Attendee, CheckIn, Org, OrgEvent, OrgEventWithId } from "./types";
 
 const attendeeConverter: FirestoreDataConverter<Attendee> = {
   toFirestore: (orgEvent: Attendee) => orgEvent as DocumentData,
@@ -102,18 +103,20 @@ export function getAttendeeCheckIns(
   });
 }
 
-
-export function getEvents(db: Firestore, orgId: string, seasonId: string, callback: (events: OrgEvent[]) => void) {
+export function getEvents(
+  db: Firestore,
+  orgId: string,
+  seasonId: string,
+  callback: (events: OrgEventWithId[]) => void,
+) {
   const q = query<OrgEvent>(
     collection(db, "orgs", orgId, "events").withConverter<OrgEvent>(eventConverter),
     where("seasonId", "==", seasonId),
   );
   return onSnapshot(q, (querySnapshot) => {
-    const events: OrgEvent[] = [];
+    const events: OrgEventWithId[] = [];
     querySnapshot.forEach((doc) => {
-      const data: OrgEvent = doc.data();
-      data.id = doc.id;
-      events.push(data);
+      events.push({ ...doc.data(), id: doc.id });
     });
     callback(events);
   });
@@ -143,6 +146,10 @@ export async function addEvent(db: Firestore, orgId: string, event: Omit<OrgEven
 
 export async function updateEvent(db: Firestore, orgId: string, eventId: string, event: OrgEvent) {
   await updateDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), event);
+}
+
+export async function deleteEvent(db: Firestore, orgId: string, eventId: string) {
+  await deleteDoc(doc(db, "orgs", orgId, "events", eventId));
 }
 
 export function getOrgs(db: Firestore, uid: string, callback: (events: Org[]) => void) {

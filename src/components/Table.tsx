@@ -67,11 +67,12 @@ const Table = <T extends unknown>({
             <th className="section-title-container" colSpan={columns.length}>
               <h2 className="section-title">{tableTitle}</h2>
               <span className="action-buttons">
-                {actions.map((action) => (
+                {actions.map((action, i) => (
                   "element" in action ? (
                     action as { element: React.ReactElement }
                   ).element : (
                     <button
+                      key={i.toString()}
                       className="blue-button action-button"
                       onClick={action.onClick}
                     >

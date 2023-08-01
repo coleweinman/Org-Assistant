@@ -131,14 +131,23 @@ form {
     color: constants.$error-color;
   }
 
-  button {
+  .form-buttons {
     display: flex;
-    align-items: center;
-    justify-content: center;
 
-    .icon {
-      font-size: constants.$icon-size;
-      margin-left: 10px;
+    button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.cancel {
+        margin-right: 10px;
+      }
+
+      .icon {
+        font-size: constants.$icon-size;
+        margin-left: 10px;
+      }
     }
   }
 }
@@ -190,5 +199,11 @@ form {
 
   &.hidden {
     transform: translateY(calc(100% + 20px));
+  }
+}
+
+.confirm-buttons {
+  button {
+    margin-left: 15px;
   }
 }

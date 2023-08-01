@@ -1,16 +1,18 @@
 import React from "react";
 import FormField from "./FormField";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getFormError, getFormFieldWithValue } from "../utils/helpers";
+import { convertInitialToFormData, getFormError, getFormFieldWithValue } from "../utils/helpers";
 import type { FormDataType, FormFieldType, FormState, FormValue } from "../utils/types";
 import type { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 
 type FormProps<T extends FormDataType> = Omit<React.HTMLProps<HTMLFormElement>, "onSubmit"> & {
   fields: FormFieldType<T>[],
-  initialData?: FormState<T>,
+  initialData?: Partial<T>,
   submitText: string,
   submitIcon?: IconDefinition,
   onSubmit: ((data: FormState<T>) => void) | ((data: FormState<T>) => Promise<void>),
+  cancelText?: string,
+  onCancel?: () => void,
 };
 
 const Form = <T extends FormDataType>({
@@ -19,9 +21,11 @@ const Form = <T extends FormDataType>({
   submitText,
   submitIcon,
   onSubmit,
+  cancelText,
+  onCancel,
   ...props
 }: FormProps<T>): React.ReactElement => {
-  const [formData, setFormData] = React.useState<FormState<T>>(initialData);
+  const [formData, setFormData] = React.useState<FormState<T>>(convertInitialToFormData(initialData, fields));
   const [error, setError] = React.useState<string | null>(null);
 
   const setFieldValue = (key: keyof T, value: FormValue<T>) => {
@@ -48,16 +52,23 @@ const Form = <T extends FormDataType>({
   return (
     <form {...props} noValidate onSubmit={submit}>
       {fields.map((field) => (
-        <FormField {...getFormFieldWithValue(field, formData[field.id], setFieldValue)} />
+        <FormField key={field.id as string} {...getFormFieldWithValue(field, formData[field.id], setFieldValue)} />
       ))}
-      <button type="submit">
-        {submitText}
-        {submitIcon && (
-          <span className="icon">
-          <FontAwesomeIcon icon={submitIcon} />
-        </span>
+      <div className="form-buttons">
+        {cancelText && onCancel && (
+          <button type="button" className="cancel" onClick={onCancel}>
+            {cancelText}
+          </button>
         )}
-      </button>
+        <button type="submit">
+          {submitText}
+          {submitIcon && (
+            <span className="icon">
+              <FontAwesomeIcon icon={submitIcon} />
+            </span>
+          )}
+        </button>
+      </div>
       {error && <p className="error">{error}</p>}
     </form>
   );

@@ -14,12 +14,13 @@ import type {
   FormState,
   FormValue,
   MultiOptionsFieldType,
+  OrgEvent,
   SingleOptionsFieldType,
   YearGroup,
 } from "./types";
 import type { ColumnDef, DeepKeys } from "@tanstack/react-table";
 import { createColumnHelper } from "@tanstack/react-table";
-import { InputType } from "./enums";
+import { InputType, Modality } from "./enums";
 
 //////////////////
 // Date helpers //
@@ -30,7 +31,7 @@ dayjs.extend(isSameOrAfter);
 
 export function timestampToDate(timestamp?: Timestamp): string {
   return timestamp
-    ? dayjs(timestamp.toDate()).format(DATE_FORMAT)
+    ? dayjs(timestamp.toMillis()).format(DATE_FORMAT)
     : "";
 }
 
@@ -96,6 +97,23 @@ export function getFormFieldWithValue<T extends FormDataType>(
   }
 }
 
+export function convertInitialToFormData<T extends FormDataType>(
+  initial: Partial<T>,
+  fields: FormFieldType<T>[],
+): FormState<T> {
+  const formData: FormState<T> = {};
+  for (const { inputType, id } of fields) {
+    if (inputType === InputType.DATE && initial[id]) {
+      formData[id] = dayjs((
+        initial[id] as Timestamp
+      ).toDate());
+    } else {
+      formData[id] = initial[id];
+    }
+  }
+  return formData;
+}
+
 export function getFormError<T extends FormDataType>(fields: FormFieldType<T>[], state: FormState<T>): string | null {
   for (const field of fields) {
     const value = state[field.id];
@@ -157,6 +175,31 @@ export function isValidUrl(text: string) {
 
 export function isValidDate(date: Dayjs) {
   return date.isSameOrAfter(dayjs(), "day");
+}
+
+export function getOrgEventFromFormState(
+  seasonId: string,
+  state: FormState<OrgEvent>,
+  newAttendeeCount: number = 0,
+  attendeeCount: number = 0,
+): OrgEvent {
+  return {
+    name: state.name,
+    seasonId,
+    imageUrl: state.imageUrl ?? "",
+    description: state.description ?? "",
+    location: state.location ?? "",
+    startTime: Timestamp.fromMillis((
+      state.startTime as Dayjs
+    ).valueOf()),
+    endTime: Timestamp.fromMillis((
+      state.endTime as Dayjs
+    ).valueOf()),
+    modality: state.modality ?? Modality.IN_PERSON,
+    virtualEventUrl: state.virtualEventUrl ?? "",
+    newAttendeeCount,
+    attendeeCount,
+  } as OrgEvent;
 }
 
 ///////////////////

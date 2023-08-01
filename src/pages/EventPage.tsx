@@ -3,14 +3,16 @@ import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
-import { getCheckIns, getEvent } from "../utils/managers";
+import EventChart from "../components/EventChart";
+import Form from "../components/Form";
 import CheckInTable from "../components/CheckInTable";
-import type { CheckIn, EventPageParams, OrgEvent, YearGroup } from "../utils/types";
+import { deleteEvent, getCheckIns, getEvent, updateEvent } from "../utils/managers";
 import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/constants";
-import { getDisplayValue, getYearGroups } from "../utils/helpers";
+import { getDisplayValue, getOrgEventFromFormState, getYearGroups } from "../utils/helpers";
+import type { CheckIn, EventPageParams, FormState, OrgEvent, YearGroup } from "../utils/types";
 import loading from "../images/loader.svg";
 import "../stylesheets/EventPage.scss";
-import EventChart from "../components/EventChart";
+import ConfirmButton from "../components/ConfirmButton";
 
 type EventPageProps = {
   db: Firestore,
@@ -20,11 +22,27 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const [checkIns, setCheckIns] = React.useState<CheckIn[] | null>(null);
   const [yearGroups, setYearGroups] = React.useState<YearGroup[]>([]);
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
+  const [editing, setEditing] = React.useState<boolean>(false);
 
   const { orgId, eventId } = useParams<EventPageParams>();
   const navigate = useNavigate();
   const onCheckInsUpdate = (checkIns: CheckIn[]) => setCheckIns(checkIns);
   const onEventUpdate = (event: OrgEvent | null) => setEvent(event);
+
+  const onEventEdit = async (data: FormState<OrgEvent>) => {
+    const editedEvent = getOrgEventFromFormState(event!.seasonId, data, event!.newAttendeeCount, event!.attendeeCount);
+    try {
+      await updateEvent(db, orgId!, eventId!, editedEvent);
+    } catch (e) {
+      console.error(e);
+    }
+    setEditing(false);
+  };
+
+  const onEventDelete = async () => {
+    await deleteEvent(db, orgId!, eventId!);
+    navigate("/orgs/" + orgId);
+  };
 
   // Listen and unsubscribe from check ins
   React.useEffect(() => (
@@ -54,35 +72,56 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
           <FontAwesomeIcon icon={solid("chevron-left")} />
         </button>
         <h1 className="header">{event.name}</h1>
-        <div className="section event-settings">
-          <div className="column">
-            <h2 className="section-title">Event Settings</h2>
-            <table className="event-data event-details-table">
-              <tbody>
-                {CREATE_EVENT_FIELDS.map((field) => (
-                  <tr>
-                    <th>{field.label}:</th>
-                    <td>
-                      {event[field.id]
-                        ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
-                        : "N/A"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="event-action-buttons">
-            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
-              <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
-            </button>
-            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
-              <FontAwesomeIcon icon={solid("pen-to-square")} />
-            </button>
-            <button className="blue-button" onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}>
-              <FontAwesomeIcon icon={solid("trash")} />
-            </button>
-          </div>
+        <div className={`section event-settings ${editing ? "editing" : ""}`}>
+          {editing ? (
+            <>
+              <h2 className="section-title">Event Settings</h2>
+              <Form
+                className="new-event-form"
+                initialData={event}
+                fields={CREATE_EVENT_FIELDS}
+                submitText="Update Event"
+                cancelText="Cancel"
+                onSubmit={onEventEdit}
+                onCancel={() => setEditing(false)}
+              />
+            </>
+          ) : (
+            <>
+              <div className="column">
+                <h2 className="section-title">Event Settings</h2>
+                <table className="event-data event-details-table">
+                  <tbody>
+                    {CREATE_EVENT_FIELDS.map((field) => (
+                      <tr key={field.id}>
+                        <th>{field.label}:</th>
+                        <td>
+                          {event[field.id]
+                            ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="event-action-buttons">
+                <button
+                  className="blue-button"
+                  onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
+                >
+                  <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
+                </button>
+                <button className="blue-button" onClick={() => setEditing(true)}>
+                  <FontAwesomeIcon icon={solid("pen-to-square")} />
+                </button>
+                <ConfirmButton
+                  icon={solid("trash")}
+                  onClick={onEventDelete}
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="section event-stats">
           <div className={"content"}>

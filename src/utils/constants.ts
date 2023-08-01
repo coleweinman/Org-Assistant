@@ -1,5 +1,14 @@
 import { IconType, InputType, Modality } from "./enums";
-import type { Attendee, CategoryData, CheckIn, ColumnData, FormFieldType, NavLink, OrgEvent } from "./types";
+import type {
+  Attendee,
+  CategoryData,
+  CheckIn,
+  ColumnData,
+  FormFieldType,
+  NavLink,
+  OrgEvent,
+  OrgEventWithId,
+} from "./types";
 import { getColumnsFromFields, timestampToDate } from "./helpers";
 import { Dayjs } from "dayjs";
 import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
@@ -123,7 +132,7 @@ export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
   { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate },
 ];
 
-export const EVENT_COLUMNS: ColumnData<OrgEvent>[] = [
+export const EVENT_COLUMNS: ColumnData<OrgEventWithId>[] = [
   ...getColumnsFromFields(CREATE_EVENT_FIELDS)
     .filter(({ id }) => ["name", "location", "startTime", "endTime"].includes(id)),
   { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value },

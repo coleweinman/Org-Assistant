@@ -106,7 +106,6 @@ export type CheckIn = {
 };
 
 export type OrgEvent = {
-  id: string,
   name: string,
   seasonId: string,
   imageUrl?: string,
@@ -120,7 +119,9 @@ export type OrgEvent = {
   attendeeCount: number,
 };
 
-export type NewOrgEvent = Omit<OrgEvent, "id">;
+export type OrgEventWithId = OrgEvent & {
+  id: string;
+};
 
 export type Org = {
   id: string,

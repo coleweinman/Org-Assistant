@@ -18,7 +18,7 @@ const columns = getColumnDef(CHECK_IN_COLUMNS);
 
 const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ eventName, checkIns }) => {
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-  
+
   const copy = async () => {
     await copyCheckIns(checkIns ?? []);
     setSuccessMessage("Copied to clipboard!");
@@ -37,6 +37,7 @@ const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ eventName, c
           {
             element: (
               <CSVLink
+                key="csv-link"
                 data={getCheckInsCsv(checkIns ?? [])}
                 filename={`${eventName.toLowerCase().replace(" ", "_")}_check_ins.csv`}
                 className="blue-button action-button"

@@ -2,12 +2,12 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Table from "./Table";
 import { getColumnDef } from "../utils/helpers";
-import type { OrgEvent } from "../utils/types";
+import type { OrgEventWithId } from "../utils/types";
 import { EVENT_COLUMNS } from "../utils/constants";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
 type EventTableProps = {
-  events: OrgEvent[] | null,
+  events: OrgEventWithId[] | null,
 };
 
 const columns = getColumnDef(EVENT_COLUMNS);
