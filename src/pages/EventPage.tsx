@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -8,7 +8,7 @@ import { CHECK_IN_FIELDS } from "../utils/constants";
 import type { CheckIn, CheckInPageParams, FormState, OrgEvent } from "../utils/types";
 import "../stylesheets/CheckInPage.scss";
 import { InputType } from "../utils/enums";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import Page from "../components/Page";
 
 type CheckInPageProps = {

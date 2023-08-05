@@ -8,7 +8,7 @@ import { addEvent, getOrg } from "../utils/managers";
 import { CREATE_EVENT_FIELDS } from "../utils/constants";
 import type { CreatEventPageParams, FormState, Org, OrgEvent } from "../utils/types";
 import { getOrgEventFromFormState } from "../utils/helpers";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import Page from "../components/Page";
 
 type CreateEventPageProps = {

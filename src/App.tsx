@@ -1,5 +1,5 @@
 import React from "react";
-import { Helmet } from "react-helmet";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 import { Route, Routes } from "react-router-dom";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -24,55 +24,57 @@ const App: React.FunctionComponent = () => {
   const db = getFirestore(app);
 
   return (
-    <AuthProvider auth={auth}>
-      <Helmet>
-        <meta charSet="utf-8" />
-        <title>Org Assistant</title>
-        <link rel="canonical" href="https://org-assistant.web.app" />
-      </Helmet>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route
-            path="/"
-            element={
-              <AuthGuard>
-                <HomePage db={db} />
-              </AuthGuard>
-            }
-          />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="orgs">
+    <HelmetProvider>
+      <AuthProvider auth={auth}>
+        <Helmet>
+          <meta charSet="utf-8" />
+          <title>Org Assistant</title>
+          <link rel="canonical" href="https://org-assistant.web.app" />
+        </Helmet>
+        <Routes>
+          <Route element={<Layout />}>
             <Route
-              path=":orgId"
+              path="/"
               element={
                 <AuthGuard>
-                  <OrgPage db={db} seasonId="Spring 2023" />
+                  <HomePage db={db} />
                 </AuthGuard>
               }
-            >
+            />
+            <Route path="login" element={<LoginPage />} />
+            <Route path="orgs">
+              <Route
+                path=":orgId"
+                element={
+                  <AuthGuard>
+                    <OrgPage db={db} seasonId="Spring 2023" />
+                  </AuthGuard>
+                }
+              >
+              </Route>
             </Route>
+            <Route
+              path="orgs/:orgId/events/:eventId"
+              element={
+                <AuthGuard>
+                  <EventPage db={db} />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="orgs/:orgId/createEvent"
+              element={
+                <AuthGuard>
+                  <CreateEventPage db={db} />
+                </AuthGuard>
+              }
+            />
+            <Route path="orgs/:orgId/checkin/:eventId" element={<CheckInPage db={db} />} />
+            <Route path="orgs/:orgId/checkin/:eventId/submitted" element={<SubmitPage />} />
           </Route>
-          <Route
-            path="orgs/:orgId/events/:eventId"
-            element={
-              <AuthGuard>
-                <EventPage db={db} />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="orgs/:orgId/createEvent"
-            element={
-              <AuthGuard>
-                <CreateEventPage db={db} />
-              </AuthGuard>
-            }
-          />
-          <Route path="orgs/:orgId/checkin/:eventId" element={<CheckInPage db={db} />} />
-          <Route path="orgs/:orgId/checkin/:eventId/submitted" element={<SubmitPage />} />
-        </Route>
-      </Routes>
-    </AuthProvider>
+        </Routes>
+      </AuthProvider>
+    </HelmetProvider>
   );
 };
 

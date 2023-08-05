@@ -7,7 +7,7 @@ import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
 import "../stylesheets/LoginPage.scss";
 import { InputType } from "../utils/enums";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import Page from "../components/Page";
 
 const LoginPage: React.FunctionComponent = () => {
