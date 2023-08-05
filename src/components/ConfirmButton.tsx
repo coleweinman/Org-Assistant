@@ -16,15 +16,15 @@ const ConfirmButton: React.FunctionComponent<ConfirmButtonProps> = ({ onClick, i
   };
   return confirming ? (
     <div className="confirm-buttons">
-      <button className="blue-button" onClick={onConfirm}>
+      <button className="icon-button" onClick={onConfirm}>
         <FontAwesomeIcon icon={solid("check")} />
       </button>
-      <button className="blue-button" onClick={() => setConfirming(false)}>
+      <button className="icon-button" onClick={() => setConfirming(false)}>
         <FontAwesomeIcon icon={solid("xmark")} />
       </button>
     </div>
   ) : (
-    <button className="blue-button" onClick={() => setConfirming(true)}>
+    <button className="icon-button" onClick={() => setConfirming(true)}>
       <FontAwesomeIcon icon={icon} />
     </button>
   );

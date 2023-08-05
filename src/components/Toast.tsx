@@ -12,6 +12,7 @@ type ToastProps = {
 const Toast: React.FunctionComponent<ToastProps> = ({ message, clearMessage, iconType }) => {
   const [displayMessage, setDisplayMessage] = React.useState<string | null>(message);
   const [messageTimeout, setMessageTimeout] = React.useState<NodeJS.Timeout | undefined>();
+  const messageTimeoutRef = React.useRef<NodeJS.Timeout | undefined | null>(null);
 
   const closeToast = () => {
     clearTimeout(messageTimeout);
@@ -19,14 +20,21 @@ const Toast: React.FunctionComponent<ToastProps> = ({ message, clearMessage, ico
   };
 
   React.useEffect(() => {
+    if (messageTimeout === messageTimeoutRef.current) {
+      return;
+    }
     if (message) {
       clearTimeout(messageTimeout);
       setDisplayMessage(message);
-      setMessageTimeout(setTimeout(clearMessage, TOAST_TIMEOUT));
+      const timeout = setTimeout(clearMessage, TOAST_TIMEOUT);
+      setMessageTimeout(timeout);
+      messageTimeoutRef.current = timeout;
     } else {
-      setMessageTimeout(setTimeout(() => setDisplayMessage(null), TOAST_TRANSITION_TIME));
+      const timeout = setTimeout(() => setDisplayMessage(null), TOAST_TRANSITION_TIME);
+      setMessageTimeout(timeout);
+      messageTimeoutRef.current = timeout;
     }
-  }, [message]);
+  }, [message, clearMessage, messageTimeout]);
 
   return (
     <div className={`toast ${message ? "show" : "hidden"} ${iconType}`} onClick={closeToast}>

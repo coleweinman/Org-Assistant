@@ -20,9 +20,13 @@ type AuthProviderProps = {
 };
 
 const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({ auth, children }) => {
+  const [loading, setLoading] = React.useState<boolean>(true);
   const [user, setUser] = React.useState<User | null>(null);
 
-  onAuthStateChanged(auth, (user) => setUser(user));
+  onAuthStateChanged(auth, (user) => {
+    setLoading(false);
+    setUser(user);
+  });
 
   const signInWithEmail = (
     email: string,
@@ -40,6 +44,7 @@ const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({ auth, childr
 
   const value = {
     user,
+    loading,
     signInWithEmail,
     signOut,
   };

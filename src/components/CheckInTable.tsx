@@ -40,7 +40,7 @@ const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ eventName, c
                 key="csv-link"
                 data={getCheckInsCsv(checkIns ?? [])}
                 filename={`${eventName.toLowerCase().replace(" ", "_")}_check_ins.csv`}
-                className="blue-button action-button"
+                className="icon-button action-button"
               >
                 <FontAwesomeIcon icon={solid("download")} />
               </CSVLink>

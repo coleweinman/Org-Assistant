@@ -3,35 +3,6 @@
 .event-page {
   padding: 40px;
 
-  &.loading-event-page {
-    justify-content: center;
-  }
-
-  .back-button {
-    transition: constants.$transition;
-    position: absolute;
-    left: 40px;
-    top: 40px;
-    width: 50px;
-    height: 50px;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50px;
-    border: none;
-    background-color: constants.$accent-background;
-
-    &:hover {
-      background-color: constants.$button-hover-color;
-    }
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
   .event-data {
     th {
       text-align: right;
@@ -51,20 +22,20 @@
   .event-settings {
     display: flex;
     justify-content: space-between;
+    padding: 10px;
 
     &.editing {
       flex-direction: column;
+    }
+
+    .column {
+      padding: 20px;
     }
 
     .event-action-buttons {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-
-      button {
-        font-size: constants.$icon-size;
-        margin-bottom: 15px;
-      }
     }
   }
 

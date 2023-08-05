@@ -33,22 +33,10 @@
         }
       }
 
-      &:hover .icon {
-        transform: translateX(5px);
-      }
-
-      .icon {
-        transition: constants.$transition;
-        font-size: constants.$icon-size;
-        margin: 0 0 0 10px;
-      }
-
       .loader {
         position: absolute;
-        width: 40px;
-        height: 40px;
-        left: calc(50% - 20px);
-        top: calc(50% - 20px);
+        left: calc(50% - #{constants.$loader-size} / 2);
+        top: calc(50% - #{constants.$loader-size} / 2);
         visibility: hidden;
       }
     }

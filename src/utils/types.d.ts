@@ -79,8 +79,14 @@ export type YearGroup = {
 
 export type AuthContextType = {
   user: User | null,
+  loading: boolean,
   signInWithEmail: (email: string, password: string) => Promise<UserCredential>,
   signOut: () => void,
+};
+
+export type NavContextType = {
+  navHeight: number,
+  windowHeight: number,
 };
 
 export type NavLink = {

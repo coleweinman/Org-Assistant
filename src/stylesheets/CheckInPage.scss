@@ -14,5 +14,9 @@
     input::placeholder {
       text-transform: lowercase;
     }
+
+    button:hover .icon {
+      transform: translate(3.5px, -3.5px);
+    }
   }
 }

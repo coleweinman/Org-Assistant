@@ -73,7 +73,7 @@ const Table = <T extends unknown>({
                   ).element : (
                     <button
                       key={i.toString()}
-                      className="blue-button action-button"
+                      className="icon-button action-button"
                       onClick={action.onClick}
                     >
                       <FontAwesomeIcon icon={action.icon} />

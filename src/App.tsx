@@ -1,4 +1,5 @@
 import React from "react";
+import { Helmet } from "react-helmet";
 import { Route, Routes } from "react-router-dom";
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -11,7 +12,7 @@ import HomePage from "./pages/HomePage";
 import OrgPage from "./pages/OrgPage";
 import CheckInPage from "./pages/CheckInPage";
 import EventPage from "./pages/EventPage";
-import SubmitPage from "./components/SubmitPage";
+import SubmitPage from "./pages/SubmitPage";
 import CreateEventPage from "./pages/CreateEventPage";
 import { FIREBASE_CONFIG } from "./utils/constants";
 import "./stylesheets/App.scss";
@@ -24,6 +25,11 @@ const App: React.FunctionComponent = () => {
 
   return (
     <AuthProvider auth={auth}>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Org Assistant</title>
+        <link rel="canonical" href="https://org-assistant.web.app" />
+      </Helmet>
       <Routes>
         <Route element={<Layout />}>
           <Route
@@ -46,10 +52,24 @@ const App: React.FunctionComponent = () => {
             >
             </Route>
           </Route>
+          <Route
+            path="orgs/:orgId/events/:eventId"
+            element={
+              <AuthGuard>
+                <EventPage db={db} />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="orgs/:orgId/createEvent"
+            element={
+              <AuthGuard>
+                <CreateEventPage db={db} />
+              </AuthGuard>
+            }
+          />
           <Route path="orgs/:orgId/checkin/:eventId" element={<CheckInPage db={db} />} />
           <Route path="orgs/:orgId/checkin/:eventId/submitted" element={<SubmitPage />} />
-          <Route path="orgs/:orgId/events/:eventId" element={<EventPage db={db} />} />
-          <Route path="orgs/:orgId/createEvent" element={<CreateEventPage db={db} />} />
         </Route>
       </Routes>
     </AuthProvider>

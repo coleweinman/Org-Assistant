@@ -1,8 +1,11 @@
 import React from "react";
+import { Helmet } from "react-helmet";
 import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import Loading from "../components/Loading";
+import Page from "../components/Page";
 import EventChart from "../components/EventChart";
 import Form from "../components/Form";
 import CheckInTable from "../components/CheckInTable";
@@ -10,9 +13,9 @@ import { deleteEvent, getCheckIns, getEvent, updateEvent } from "../utils/manage
 import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/constants";
 import { getDisplayValue, getOrgEventFromFormState, getYearGroups } from "../utils/helpers";
 import type { CheckIn, EventPageParams, FormState, OrgEvent, YearGroup } from "../utils/types";
-import loading from "../images/loader.svg";
 import "../stylesheets/EventPage.scss";
 import ConfirmButton from "../components/ConfirmButton";
+import BackButton from "../components/BackButton";
 
 type EventPageProps = {
   db: Firestore,
@@ -61,16 +64,19 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
 
   if (!event) {
     return (
-      <div className="page event-page loading-event-page">
-        <img className="loader" src={loading} alt="Loading..." />
-      </div>
-    );
-  } else {
-    return (
-      <div className="page event-page">
+      <Loading className="event-page">
         <button className="back-button" onClick={() => navigate(-1)}>
           <FontAwesomeIcon icon={solid("chevron-left")} />
         </button>
+      </Loading>
+    );
+  } else {
+    return (
+      <Page className="event-page">
+        <Helmet>
+          <title>{event.name} &bull; Org Assistant</title>
+        </Helmet>
+        <BackButton />
         <h1 className="header">{event.name}</h1>
         <div className={`section event-settings ${editing ? "editing" : ""}`}>
           {editing ? (
@@ -107,13 +113,13 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
               </div>
               <div className="event-action-buttons">
                 <button
-                  className="blue-button"
+                  className="icon-button"
                   onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
                 >
                   <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
                 </button>
-                <button className="blue-button" onClick={() => setEditing(true)}>
-                  <FontAwesomeIcon icon={solid("pen-to-square")} />
+                <button className="icon-button" onClick={() => setEditing(true)}>
+                  <FontAwesomeIcon icon={solid("pen")} />
                 </button>
                 <ConfirmButton
                   icon={solid("trash")}
@@ -140,7 +146,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
           <EventChart yearGroups={yearGroups} />
         </div>
         <CheckInTable eventName={event.name} checkIns={checkIns} />
-      </div>
+      </Page>
     );
   }
 };

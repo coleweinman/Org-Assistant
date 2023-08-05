@@ -1,9 +1,18 @@
 @use "constants";
 
-.home {
+.page.home {
   padding: 50px;
   text-align: center;
-  align-items: stretch !important;
+  align-items: stretch;
+
+  &.loading-page {
+    align-items: center;
+
+    .header {
+      position: absolute;
+      top: 50px;
+    }
+  }
 
   .no-orgs-msg {
     margin: 30px;

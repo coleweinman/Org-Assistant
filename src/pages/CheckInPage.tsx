@@ -8,6 +8,8 @@ import { CHECK_IN_FIELDS } from "../utils/constants";
 import type { CheckIn, CheckInPageParams, FormState, OrgEvent } from "../utils/types";
 import "../stylesheets/CheckInPage.scss";
 import { InputType } from "../utils/enums";
+import { Helmet } from "react-helmet";
+import Page from "../components/Page";
 
 type CheckInPageProps = {
   db: Firestore,
@@ -53,7 +55,10 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   }, [db, eventId, orgId]);
 
   return event ? (
-    <div className="page check-in-page">
+    <Page className="check-in-page">
+      <Helmet>
+        <title>{event.name} Check In &bull; Org Assistant</title>
+      </Helmet>
       <h1 className="header">{event.name}</h1>
       <Form
         className="check-in-form"
@@ -63,9 +68,9 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
         submitIcon={solid("paper-plane")}
         onSubmit={onFormSubmit}
       />
-    </div>
+    </Page>
   ) : (
-    <div className="page check-in-page" />
+    <Page className="check-in-page" />
   );
 };
 

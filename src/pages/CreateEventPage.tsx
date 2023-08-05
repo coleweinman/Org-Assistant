@@ -8,6 +8,8 @@ import { addEvent, getOrg } from "../utils/managers";
 import { CREATE_EVENT_FIELDS } from "../utils/constants";
 import type { CreatEventPageParams, FormState, Org, OrgEvent } from "../utils/types";
 import { getOrgEventFromFormState } from "../utils/helpers";
+import { Helmet } from "react-helmet";
+import Page from "../components/Page";
 
 type CreateEventPageProps = {
   db: Firestore,
@@ -37,7 +39,10 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
   };
 
   return (
-    <div className="page event-page">
+    <Page className="event-page">
+      <Helmet>
+        <title>Create Event &bull; Org Assistant</title>
+      </Helmet>
       <button className="back-button" onClick={() => navigate(-1)}>
         <FontAwesomeIcon icon={solid("chevron-left")} />
       </button>
@@ -52,7 +57,7 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
           onSubmit={onFormSubmit}
         />
       </div>
-    </div>
+    </Page>
   );
 };
 
