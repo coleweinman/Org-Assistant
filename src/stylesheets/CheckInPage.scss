@@ -15,9 +15,8 @@
       text-transform: lowercase;
     }
 
-    button .icon {
-      font-size: constants.$icon-size;
-      margin-left: 10px;
+    button:hover .icon {
+      transform: translate(3.5px, -3.5px);
     }
   }
 }

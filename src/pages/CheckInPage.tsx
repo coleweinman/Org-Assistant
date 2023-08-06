@@ -1,14 +1,15 @@
 import React from "react";
 import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
-import dayjs from "dayjs";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Form from "../components/Form";
 import { getEvent, submitCheckIn } from "../utils/managers";
 import { CHECK_IN_FIELDS } from "../utils/constants";
-import { InputType } from "../utils/enums";
 import type { CheckIn, CheckInPageParams, FormState, OrgEvent } from "../utils/types";
 import "../stylesheets/CheckInPage.scss";
+import { InputType } from "../utils/enums";
+import { Helmet } from "react-helmet-async";
+import Page from "../components/Page";
 
 type CheckInPageProps = {
   db: Firestore,
@@ -20,14 +21,13 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   const { orgId, eventId } = useParams<CheckInPageParams>();
   const navigate = useNavigate();
 
-  const getInitialData = () => {
-    const data: FormState<CheckIn> = {};
+  const getInitialData = (): Partial<CheckIn> => {
+    const data: Partial<CheckIn> = {};
     for (const { id, inputType } of CHECK_IN_FIELDS) {
       const saved = window.localStorage.getItem(id);
-      if (saved && inputType === InputType.DATE) {
-        data[id] = dayjs(saved);
-      } else if (saved) {
-        data[id] = saved;
+      if (saved) {
+        // @ts-ignore: Type 'string | Timestamp' is not assignable to type '(string & Timestamp) | undefined'.
+        data[id] = inputType === InputType.DATE ? Timestamp.fromDate(new Date(saved)) : saved;
       }
     }
     return data;
@@ -55,7 +55,10 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   }, [db, eventId, orgId]);
 
   return event ? (
-    <div className="page check-in-page">
+    <Page className="check-in-page">
+      <Helmet>
+        <title>{event.name} Check In &bull; Org Assistant</title>
+      </Helmet>
       <h1 className="header">{event.name}</h1>
       <Form
         className="check-in-form"
@@ -65,9 +68,9 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
         submitIcon={solid("paper-plane")}
         onSubmit={onFormSubmit}
       />
-    </div>
+    </Page>
   ) : (
-    <div className="page check-in-page" />
+    <Page className="check-in-page" />
   );
 };
 

@@ -13,3 +13,8 @@ export enum Modality {
   VIRTUAL = "virtual",
   HYBRID = "hybrid",
 }
+
+export enum IconType {
+  SUCCESS = "success",
+  ERROR = "error",
+}

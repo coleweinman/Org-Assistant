@@ -7,6 +7,8 @@ import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
 import "../stylesheets/LoginPage.scss";
 import { InputType } from "../utils/enums";
+import { Helmet } from "react-helmet-async";
+import Page from "../components/Page";
 
 const LoginPage: React.FunctionComponent = () => {
   const [email, setEmail] = React.useState<string>("");
@@ -58,7 +60,10 @@ const LoginPage: React.FunctionComponent = () => {
   }, [auth.user, navigate]);
 
   return (
-    <div className="page login">
+    <Page className="login">
+      <Helmet>
+        <title>Log In &bull; Org Assistant</title>
+      </Helmet>
       <h1 className="heading">
         Org Assistant
       </h1>
@@ -86,7 +91,7 @@ const LoginPage: React.FunctionComponent = () => {
         </button>
         <p className={`error ${error ? "" : "hidden"}`}>{error || "test"}</p>
       </form>
-    </div>
+    </Page>
   );
 };
 

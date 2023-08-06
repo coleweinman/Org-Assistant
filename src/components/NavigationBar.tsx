@@ -6,12 +6,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { NAVIGATION_LINKS } from "../utils/constants";
 import "../stylesheets/NavigationBar.scss";
 
-const NavigationBar: React.FunctionComponent = () => {
+type NavigationBarProps = {
+  setNavHeight: (height: number) => void,
+};
+
+const NavigationBar: React.FunctionComponent<NavigationBarProps> = ({ setNavHeight }) => {
+  const navbar = React.useRef<HTMLElement>(null);
   const navigate = useNavigate();
   const auth = useAuth();
 
+  React.useEffect(() => {
+    setNavHeight(navbar?.current?.clientHeight ?? 0);
+  }, [navbar?.current?.clientHeight, setNavHeight]);
+
   return (
-    <nav className="navbar">
+    <nav className="navbar" ref={navbar}>
       <div className="nav-content">
         <h2 className="nav-title">Org Assistant</h2>
         <ul className="nav-links">
@@ -23,7 +32,7 @@ const NavigationBar: React.FunctionComponent = () => {
         </ul>
       </div>
       {auth.user && (
-        <button className="blue-button log-out-button" onClick={auth.signOut}>
+        <button className="icon-button log-out-button" onClick={auth.signOut}>
           <FontAwesomeIcon icon={solid("sign-out")} />
         </button>
       )}

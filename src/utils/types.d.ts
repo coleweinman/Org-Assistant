@@ -1,11 +1,18 @@
+import React from "react";
 import { InputType, Modality } from "./enums";
-import { User, UserCredential } from "firebase/auth";
+import type { User, UserCredential } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { Dayjs } from "dayjs";
+import type { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 
 export type FormDataType = FormDataType;
 export type FormValue<T extends FormDataType> = FormFieldWithValue<T>["value"];
 export type FormState<T extends FormDataType> = Partial<Record<keyof T, FormValue<T>>>
+
+export type FormOption = {
+  id: string,
+  label: string
+};
 
 type BaseField<T extends FormDataType> = {
   id: keyof T,
@@ -25,12 +32,12 @@ type DateFieldType<T extends FormDataType> = BaseField<T> & {
 
 type SingleOptionsFieldType<T extends FormDataType> = BaseField<T> & {
   inputType: InputType.RADIO | InputType.CHECKBOX | InputType.DROPDOWN,
-  options: { id: string, label: string }[],
+  options: FormOption[],
 };
 
 type MultiOptionsFieldType<T extends FormDataType> = BaseField<T> & {
   inputType: InputType.RADIO | InputType.CHECKBOX | InputType.DROPDOWN,
-  options: { id: string, label: string }[],
+  options: FormOption[],
 };
 
 export type FormFieldType<T extends FormDataType> =
@@ -72,8 +79,14 @@ export type YearGroup = {
 
 export type AuthContextType = {
   user: User | null,
+  loading: boolean,
   signInWithEmail: (email: string, password: string) => Promise<UserCredential>,
   signOut: () => void,
+};
+
+export type NavContextType = {
+  navHeight: number,
+  windowHeight: number,
 };
 
 export type NavLink = {
@@ -99,7 +112,6 @@ export type CheckIn = {
 };
 
 export type OrgEvent = {
-  id: string,
   name: string,
   seasonId: string,
   imageUrl?: string,
@@ -113,7 +125,9 @@ export type OrgEvent = {
   attendeeCount: number,
 };
 
-export type NewOrgEvent = Omit<OrgEvent, "id">;
+export type OrgEventWithId = OrgEvent & {
+  id: string;
+};
 
 export type Org = {
   id: string,
@@ -125,6 +139,12 @@ export type ColumnData<T extends FormDataType> = {
   id: keyof T,
   label: string,
   getDisplayValue: (value: typeof T[keyof T]) => string,
+};
+
+export type CategoryData<T extends FormDataType> = {
+  id: string,
+  label: string,
+  getDisplayValue: (state: T) => string,
 };
 
 export type OrgPageParams = {
@@ -144,4 +164,11 @@ export type CreatEventPageParams = {
 export type EventPageParams = {
   orgId: string,
   eventId: string,
+};
+
+export type ActionButton = {
+  icon: IconDefinition,
+  onClick: () => void,
+} | {
+  element: React.ReactElement
 };

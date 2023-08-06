@@ -1,15 +1,21 @@
 import React from "react";
-import { Firestore } from "firebase/firestore";
+import { Helmet } from "react-helmet-async";
+import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
-import { getCheckIns, getEvent } from "../utils/managers";
+import Loading from "../components/Loading";
+import Page from "../components/Page";
+import EventChart from "../components/EventChart";
+import Form from "../components/Form";
 import CheckInTable from "../components/CheckInTable";
-import { Pie, PieChart, Tooltip } from "recharts";
-import type { CheckIn, EventPageParams, OrgEvent, YearGroup } from "../utils/types";
-import { copyCheckIns } from "../utils/helpers";
-import loading from "../images/loader.svg";
+import { deleteEvent, getCheckIns, getEvent, updateEvent } from "../utils/managers";
+import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/constants";
+import { getDisplayValue, getOrgEventFromFormState, getYearGroups } from "../utils/helpers";
+import type { CheckIn, EventPageParams, FormState, OrgEvent, YearGroup } from "../utils/types";
 import "../stylesheets/EventPage.scss";
+import ConfirmButton from "../components/ConfirmButton";
+import BackButton from "../components/BackButton";
 
 type EventPageProps = {
   db: Firestore,
@@ -19,96 +25,128 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const [checkIns, setCheckIns] = React.useState<CheckIn[] | null>(null);
   const [yearGroups, setYearGroups] = React.useState<YearGroup[]>([]);
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
+  const [editing, setEditing] = React.useState<boolean>(false);
 
   const { orgId, eventId } = useParams<EventPageParams>();
   const navigate = useNavigate();
   const onCheckInsUpdate = (checkIns: CheckIn[]) => setCheckIns(checkIns);
   const onEventUpdate = (event: OrgEvent | null) => setEvent(event);
 
+  const onEventEdit = async (data: FormState<OrgEvent>) => {
+    const editedEvent = getOrgEventFromFormState(event!.seasonId, data, event!.newAttendeeCount, event!.attendeeCount);
+    try {
+      await updateEvent(db, orgId!, eventId!, editedEvent);
+    } catch (e) {
+      console.error(e);
+    }
+    setEditing(false);
+  };
+
+  const onEventDelete = async () => {
+    await deleteEvent(db, orgId!, eventId!);
+    navigate("/orgs/" + orgId);
+  };
+
   // Listen and unsubscribe from check ins
   React.useEffect(() => (
     getCheckIns(db, orgId!, eventId!, onCheckInsUpdate)
   ), [db, orgId, eventId]);
-
-  React.useEffect(() => {
-    const yearMap: Map<string, number> = new Map();
-    for (const checkIn of checkIns ?? []) {
-      if (!yearMap.has(checkIn.year)) {
-        yearMap.set(checkIn.year, 0);
-      }
-      yearMap.set(checkIn.year, yearMap.get(checkIn.year)! + 1);
-    }
-    const newYearGroups: YearGroup[] = [];
-    Array.from(yearMap.entries())
-      .map((e) => newYearGroups.push({ year: e[0], quantity: e[1] }));
-    setYearGroups(newYearGroups);
-  }, [checkIns]);
 
   // Listen and unsubscribe from event details
   React.useEffect(() => (
     getEvent(db, orgId!, eventId!, true, onEventUpdate)
   ), [db, orgId, eventId]);
 
+  // Get data for chart
+  React.useEffect(() => {
+    setYearGroups(getYearGroups(checkIns ?? []));
+  }, [checkIns]);
+
   if (!event) {
     return (
-      <div className="page event-page loading-event-page">
-        <img className="loader" src={loading} alt="Loading..." />
-      </div>
-    );
-  } else {
-    return (
-      <div className="page event-page">
+      <Loading className="event-page">
         <button className="back-button" onClick={() => navigate(-1)}>
           <FontAwesomeIcon icon={solid("chevron-left")} />
         </button>
+      </Loading>
+    );
+  } else {
+    return (
+      <Page className="event-page">
+        <Helmet>
+          <title>{event.name} &bull; Org Assistant</title>
+        </Helmet>
+        <BackButton />
         <h1 className="header">{event.name}</h1>
-        <div className="section event-settings">
-          <h2 className="section-title">Event Settings</h2>
-          <button
-            className="view-check-in"
-            onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
-          >
-            View check-in page
-            <span className="new-tab-icon">
-            <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
-          </span>
-          </button>
+        <div className={`section event-settings ${editing ? "editing" : ""}`}>
+          {editing ? (
+            <>
+              <h2 className="section-title">Event Settings</h2>
+              <Form
+                className="new-event-form"
+                initialData={event}
+                fields={CREATE_EVENT_FIELDS}
+                submitText="Update Event"
+                cancelText="Cancel"
+                onSubmit={onEventEdit}
+                onCancel={() => setEditing(false)}
+              />
+            </>
+          ) : (
+            <>
+              <div className="column">
+                <h2 className="section-title">Event Settings</h2>
+                <table className="event-data event-details-table">
+                  <tbody>
+                    {CREATE_EVENT_FIELDS.map((field) => (
+                      <tr key={field.id}>
+                        <th>{field.label}:</th>
+                        <td>
+                          {event[field.id]
+                            ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="event-action-buttons">
+                <button
+                  className="icon-button"
+                  onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
+                >
+                  <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
+                </button>
+                <button className="icon-button" onClick={() => setEditing(true)}>
+                  <FontAwesomeIcon icon={solid("pen")} />
+                </button>
+                <ConfirmButton
+                  icon={solid("trash")}
+                  onClick={onEventDelete}
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="section event-stats">
-          <h2 className="section-title">Event Statistics</h2>
-          <table className="attendee-table">
-            <tbody>
-              <tr>
-                <th>New:</th>
-                <td>{event.newAttendeeCount}</td>
-              </tr>
-              <tr>
-                <th>Returning:</th>
-                <td>{event.attendeeCount - event.newAttendeeCount}</td>
-              </tr>
-              <tr>
-                <th>Total Attendees:</th>
-                <td>{event.attendeeCount}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className={"content"}>
+            <h2 className="section-title">Event Statistics</h2>
+            <table className="event-data attendee-table">
+              <tbody>
+                {EVENT_STATISTICS_CATEGORIES.map(({ id, label, getDisplayValue }) => (
+                  <tr key={id}>
+                    <th>{label}:</th>
+                    <td>{getDisplayValue(event)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <EventChart yearGroups={yearGroups} />
         </div>
-        <button onClick={() => copyCheckIns(checkIns ?? [])}>COPY</button>
-        <CheckInTable checkIns={checkIns} />
-        <PieChart width={400} height={400}>
-          <Pie
-            nameKey="year"
-            dataKey="quantity"
-            isAnimationActive={false}
-            data={yearGroups ?? []}
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
-            label
-          />
-          <Tooltip />
-        </PieChart>
-      </div>
+        <CheckInTable eventName={event.name} checkIns={checkIns} />
+      </Page>
     );
   }
 };

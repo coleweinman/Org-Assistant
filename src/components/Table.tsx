@@ -1,26 +1,27 @@
 import React from "react";
 import {
-  ColumnDef,
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  Header,
-  SortingState,
+  type Header,
+  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
 import "../stylesheets/Table.scss";
+import type { ActionButton } from "../utils/types";
 
 type TableProps<T> = {
   data: T[] | null,
   columns: ColumnDef<T, any>[],
   tableName: string,
   tableTitle: string,
-  onClick?: (row: T) => void,
-  onCreate?: () => void,
+  onRowClick?: (row: T) => void,
+  actions?: ActionButton[],
   initialSorting?: SortingState,
 }
 
@@ -29,8 +30,8 @@ const Table = <T extends unknown>({
   columns,
   tableName,
   tableTitle,
-  onClick,
-  onCreate,
+  onRowClick,
+  actions = [],
   initialSorting = [],
 }: TableProps<T>): React.ReactElement => {
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
@@ -65,14 +66,21 @@ const Table = <T extends unknown>({
           <tr>
             <th className="section-title-container" colSpan={columns.length}>
               <h2 className="section-title">{tableTitle}</h2>
-              {onCreate && (
-                <button
-                  className="blue-button action-button"
-                  onClick={onCreate}
-                >
-                  <FontAwesomeIcon icon={solid("pen-to-square")} />
-                </button>
-              )}
+              <span className="action-buttons">
+                {actions.map((action, i) => (
+                  "element" in action ? (
+                    action as { element: React.ReactElement }
+                  ).element : (
+                    <button
+                      key={i.toString()}
+                      className="icon-button action-button"
+                      onClick={action.onClick}
+                    >
+                      <FontAwesomeIcon icon={action.icon} />
+                    </button>
+                  )
+                ))}
+              </span>
             </th>
           </tr>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -115,9 +123,8 @@ const Table = <T extends unknown>({
           ) : table.getRowModel().rows.map((row) => (
             <tr
               key={row.id}
-              className={onClick ? "clickable" : ""}
-              onClick={onClick ? () => onClick(row.original) : () => {
-              }}
+              className={onRowClick ? "clickable" : ""}
+              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
             >
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id}>

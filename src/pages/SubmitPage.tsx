@@ -1,9 +1,10 @@
 import React from "react";
+import Page from "../components/Page";
 
 const SubmitPage: React.FunctionComponent = () => (
-  <div className="page submit-page">
+  <Page className="submit-page">
     <h3>You are now checked in!</h3>
-  </div>
+  </Page>
 );
 
 export default SubmitPage;

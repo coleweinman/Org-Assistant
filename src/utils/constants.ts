@@ -1,7 +1,21 @@
-import { InputType, Modality } from "./enums";
-import type { Attendee, CheckIn, ColumnData, FormFieldType, NavLink, OrgEvent } from "./types";
-import { timestampToDate } from "./helpers";
+import { IconType, InputType, Modality } from "./enums";
+import type {
+  Attendee,
+  CategoryData,
+  CheckIn,
+  ColumnData,
+  FormFieldType,
+  NavLink,
+  OrgEvent,
+  OrgEventWithId,
+} from "./types";
+import { getColumnsFromFields, timestampToDate } from "./helpers";
 import { Dayjs } from "dayjs";
+import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+
+export const TOAST_TIMEOUT = 5000;
+export const TOAST_TRANSITION_TIME = 200;
 
 export const INPUT_DATE_FORMAT = "M/DD h:mma";
 export const DATE_FORMAT = "M/DD/YYYY h:mma";
@@ -24,6 +38,11 @@ const MODALITY_OPTIONS: { id: Modality, label: string }[] = [
   { id: Modality.VIRTUAL, label: "Virtual" },
   { id: Modality.HYBRID, label: "Hybrid" },
 ];
+
+export const ICON_TYPE_TO_ICON: Record<IconType, IconDefinition> = {
+  [IconType.SUCCESS]: solid("check-circle"),
+  [IconType.ERROR]: solid("xmark-circle"),
+};
 
 export const NAVIGATION_LINKS: NavLink[] = [
   { name: "Home", link: "/" },
@@ -60,18 +79,6 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
-// name: eventName,
-//   seasonId: org!.currentSeasonId,
-//   imageUrl: imageUrl,
-//   description: description,
-//   location: location,
-//   startTime: Timestamp.fromMillis(startTime!.valueOf()),
-//   endTime: Timestamp.fromMillis(endTime!.valueOf()),
-//   modality: modality,
-//   virtualEventUrl: virtualEventUrl,
-//   newAttendeeCount: 0,
-//   attendeeCount: 0,
-
 export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
@@ -102,6 +109,18 @@ export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
   },
 ];
 
+export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEvent>[] = [
+  { id: "new", label: "New", getDisplayValue: ({ newAttendeeCount }: OrgEvent) => newAttendeeCount.toString() },
+  {
+    id: "returning",
+    label: "Returning",
+    getDisplayValue: ({ attendeeCount, newAttendeeCount }: OrgEvent) => (
+      attendeeCount - newAttendeeCount
+    ).toString(),
+  },
+  { id: "total", label: "Total Attendees", getDisplayValue: ({ attendeeCount }: OrgEvent) => attendeeCount.toString() },
+];
+
 export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
   { id: "name", label: "Name", getDisplayValue: (value: string) => value },
   { id: "email", label: "Email", getDisplayValue: (value: string) => value },
@@ -109,26 +128,12 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
 ];
 
 export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
-  ...CHECK_IN_FIELDS.map(({ id, label }) => (
-    {
-      id,
-      label,
-      getDisplayValue: (value: string) => value,
-    }
-  )),
+  ...getColumnsFromFields(CHECK_IN_FIELDS),
   { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate },
 ];
 
-export const EVENT_COLUMNS: ColumnData<OrgEvent>[] = [
-  { id: "name", label: "Name", getDisplayValue: (value) => value },
-  { id: "location", label: "Location", getDisplayValue: (value) => value },
-  { id: "startTime", label: "Start", getDisplayValue: timestampToDate },
-  { id: "endTime", label: "End", getDisplayValue: timestampToDate },
+export const EVENT_COLUMNS: ColumnData<OrgEventWithId>[] = [
+  ...getColumnsFromFields(CREATE_EVENT_FIELDS)
+    .filter(({ id }) => ["name", "location", "startTime", "endTime"].includes(id)),
   { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value },
 ];
-
-export const MODALITY_DISPLAY: Record<Modality, string> = {
-  [Modality.IN_PERSON]: "In-Person",
-  [Modality.VIRTUAL]: "Virtual",
-  [Modality.HYBRID]: "Hybrid",
-};

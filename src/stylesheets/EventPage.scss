@@ -3,52 +3,39 @@
 .event-page {
   padding: 40px;
 
-  &.loading-event-page {
-    justify-content: center;
-  }
-
-  .back-button {
-    transition: constants.$transition;
-    position: absolute;
-    left: 40px;
-    top: 40px;
-    width: 50px;
-    height: 50px;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50px;
-    border: none;
-    background-color: constants.$accent-background;
-
-    &:hover {
-      background-color: constants.$button-hover-color;
+  .event-data {
+    th {
+      text-align: right;
     }
   }
 
-  .header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
   .event-stats {
-    .attendee-table {
-      th {
-        text-align: right;
-      }
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px;
+
+    .content {
+      padding: 30px 0;
     }
   }
 
   .event-settings {
-    .view-check-in {
-      display: flex;
-      align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
 
-      .new-tab-icon {
-        font-size: constants.$icon-size;
-        margin-left: 10px;
-      }
+    &.editing {
+      flex-direction: column;
+    }
+
+    .column {
+      padding: 20px;
+    }
+
+    .event-action-buttons {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
     }
   }
 

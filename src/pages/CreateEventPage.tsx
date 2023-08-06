@@ -1,13 +1,15 @@
 import React from "react";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Dayjs } from "dayjs";
-import { Firestore, Timestamp } from "firebase/firestore";
+import { Firestore } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import Form from "../components/Form";
 import { addEvent, getOrg } from "../utils/managers";
 import { CREATE_EVENT_FIELDS } from "../utils/constants";
-import type { CreatEventPageParams, FormState, NewOrgEvent, Org } from "../utils/types";
+import type { CreatEventPageParams, FormState, Org, OrgEvent } from "../utils/types";
+import { getOrgEventFromFormState } from "../utils/helpers";
+import { Helmet } from "react-helmet-async";
+import Page from "../components/Page";
 
 type CreateEventPageProps = {
   db: Firestore,
@@ -26,19 +28,8 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
     getOrg(db, orgId!, onOrgUpdate)
   ), [db, orgId, eventId]);
 
-  const onFormSubmit = async (data: FormState<NewOrgEvent>) => {
-    const event = {
-      ...data,
-      seasonId: org!.currentSeasonId,
-      startTime: Timestamp.fromMillis((
-        data.startTime! as Dayjs
-      ).valueOf()),
-      endTime: Timestamp.fromMillis((
-        data.endTime! as Dayjs
-      ).valueOf()),
-      newAttendeeCount: 0,
-      attendeeCount: 0,
-    } as NewOrgEvent;
+  const onFormSubmit = async (data: FormState<OrgEvent>) => {
+    const event = getOrgEventFromFormState(org!.currentSeasonId, data);
     const success = await addEvent(db, orgId!, event);
     if (success) {
       navigate(`/orgs/${orgId}`);
@@ -48,7 +39,10 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
   };
 
   return (
-    <div className="page event-page">
+    <Page className="event-page">
+      <Helmet>
+        <title>Create Event &bull; Org Assistant</title>
+      </Helmet>
       <button className="back-button" onClick={() => navigate(-1)}>
         <FontAwesomeIcon icon={solid("chevron-left")} />
       </button>
@@ -63,7 +57,7 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
           onSubmit={onFormSubmit}
         />
       </div>
-    </div>
+    </Page>
   );
 };
 
