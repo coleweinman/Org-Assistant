@@ -26,6 +26,9 @@ type EventPageProps = {
 const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const [checkIns, setCheckIns] = React.useState<CheckIn[] | null>(null);
   const [yearGroups, setYearGroups] = React.useState<YearGroup[]>([]);
+  const [checkInYearGroups, setCheckInYearGroups] = React.useState<YearGroup[]>([]);
+  const [rsvpYearGroups, setRsvpYearGroups] = React.useState<YearGroup[]>([]);
+  const [noShowYearGroups, setNoShowYearGroups] = React.useState<YearGroup[]>([]);
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
   const [editing, setEditing] = React.useState<boolean>(false);
 
@@ -61,7 +64,9 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
 
   // Get data for chart
   React.useEffect(() => {
-    setYearGroups(getYearGroups(checkIns ?? []));
+    setCheckInYearGroups(getYearGroups(checkIns?.filter(({ didCheckIn }) => didCheckIn)));
+    setRsvpYearGroups(getYearGroups(checkIns?.filter(({ didRsvp }) => didRsvp)));
+    setNoShowYearGroups(getYearGroups(checkIns?.filter(({ didRsvp, didCheckIn }) => didRsvp && !didCheckIn)));
   }, [checkIns]);
 
   if (!event) {
@@ -151,7 +156,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
               </tbody>
             </table>
           </div>
-          <EventChart yearGroups={yearGroups} />
+          <EventChart checkIns={checkInYearGroups} rsvps={rsvpYearGroups} noShows={noShowYearGroups} />
         </div>
         <CheckInTable eventName={event.name} checkIns={checkIns} />
       </Page>

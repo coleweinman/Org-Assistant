@@ -17,6 +17,7 @@ import type {
   MultiOptionsFieldType,
   OrgEvent,
   SingleOptionsFieldType,
+  YearGroup,
 } from "./types";
 import { type ColumnDef, createColumnHelper, type DeepKeys, Row } from "@tanstack/react-table";
 import { rankItem } from "@tanstack/match-sorter-utils";
@@ -283,4 +284,27 @@ export function fuzzyFilter<T extends FormDataType>(
 
   // Return if the item should be filtered in/out
   return itemRank.passed;
+}
+
+////////////////////
+// Charts helpers //
+////////////////////
+
+export function getCellFill(colors: string[], index: number, total: number): string {
+  if (total >= colors.length) {
+    return colors[index % colors.length];
+  }
+  return colors[Math.floor((
+    index / (
+      total - 1
+    )
+  ) * (
+    colors.length - 1
+  ))];
+}
+
+export function addTableId(data: YearGroup[], id: string) {
+  return data.map((entry) => (
+    { ...entry, tableId: id }
+  ));
 }

@@ -51,4 +51,25 @@
       margin-left: 10px;
     }
   }
+
+  .custom-tooltip {
+    background-color: constants.$accent-background;
+    padding: 10px;
+    border: constants.$border-style;
+    border-radius: constants.$border-radius;
+    outline: none;
+
+    p {
+      margin: 0;
+    }
+
+    .table-id {
+      font-size: constants.$small-font-size;
+      font-weight: constants.$normal-bold;
+    }
+
+    .label-name {
+      font-weight: constants.$normal-bold;
+    }
+  }
 }

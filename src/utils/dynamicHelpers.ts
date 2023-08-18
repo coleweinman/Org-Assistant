@@ -28,7 +28,7 @@ export async function copyCheckIns(checkIns: CheckIn[]) {
 // Event page helpers //
 ////////////////////////
 
-export function getYearGroups(checkIns: CheckIn[]): YearGroup[] {
+export function getYearGroups(checkIns: CheckIn[] = []): YearGroup[] {
   const yearQuantities: Record<string, number> = {};
   const yearOptions = (
     CHECK_IN_FIELDS.find(({ id }) => id === "year")! as SingleOptionsFieldType<CheckIn>
