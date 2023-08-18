@@ -1,4 +1,5 @@
 @use "constants";
+@use "App";
 
 .table-container {
   overflow: scroll;
@@ -39,6 +40,10 @@
     .section-title-container {
       position: relative;
 
+      .section-title {
+        margin-bottom: 0;
+      }
+
       .action-buttons {
         position: absolute;
         top: 5px;
@@ -50,6 +55,54 @@
 
         .action-button {
           margin: 5px 0;
+        }
+      }
+    }
+
+    .filters-cell {
+      padding-top: 0;
+
+      .filters-container {
+        display: flex;
+        justify-content: space-between;
+
+        .strict-filters-container {
+          display: flex;
+          align-items: center;
+
+          .filter {
+            white-space: nowrap;
+            padding: 10px;
+            margin: 0 5px;
+            border: constants.$border-style;
+            border-radius: constants.$border-radius;
+
+            &.filter-off {
+              border-style: dashed;
+              opacity: 0.3;
+            }
+
+            .filter-name {
+              margin-right: 10px;
+            }
+          }
+        }
+
+        .fuzzy-filters-container {
+          .search-bar-wrapper {
+            @extend .text-input;
+            padding: 10px;
+            text-align: left;
+
+            .search-bar {
+              padding: 0;
+              border: none;
+              box-shadow: none;
+              border-radius: 0;
+              margin-left: 10px;
+              outline: none;
+            }
+          }
         }
       }
     }

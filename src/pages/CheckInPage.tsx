@@ -1,15 +1,16 @@
 import React from "react";
+import { Helmet } from "react-helmet-async";
 import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Form from "../components/Form";
-import { getEvent, submitCheckIn } from "../utils/managers";
-import { CHECK_IN_FIELDS } from "../utils/constants";
+import Page from "../components/Page";
+import { getEvent, submitCheckInOrRsvp } from "../utils/managers";
+import { CHECK_IN_FIELDS, CHECK_IN_TYPE_INFO } from "../utils/dynamicConstants";
+import { getSavedUserData } from "../utils/dynamicHelpers";
+import { CheckInType } from "../utils/enums";
 import type { CheckIn, CheckInPageParams, FormState, OrgEvent } from "../utils/types";
 import "../stylesheets/CheckInPage.scss";
-import { InputType } from "../utils/enums";
-import { Helmet } from "react-helmet-async";
-import Page from "../components/Page";
 
 type CheckInPageProps = {
   db: Firestore,
@@ -18,36 +19,23 @@ type CheckInPageProps = {
 const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
 
-  const { orgId, eventId } = useParams<CheckInPageParams>();
+  const { orgId, eventId, type } = useParams<CheckInPageParams>();
   const navigate = useNavigate();
+  const title = CHECK_IN_TYPE_INFO[type!].display;
 
-  const getInitialData = (): Partial<CheckIn> => {
-    const data: Partial<CheckIn> = {};
-    for (const { id, inputType } of CHECK_IN_FIELDS) {
-      const saved = window.localStorage.getItem(id);
-      if (saved) {
-        // @ts-ignore: Type 'string | Timestamp' is not assignable to type '(string & Timestamp) | undefined'.
-        data[id] = inputType === InputType.DATE ? Timestamp.fromDate(new Date(saved)) : saved;
-      }
-    }
-    return data;
-  };
-
-  const onFormSubmit = async (data: FormState<CheckIn>) => {
+  const onFormSubmit = async (data: FormState<CheckIn>): Promise<void | never> => {
     const checkIn: CheckIn = {
       ...data,
+      didRsvp: type === CheckInType.RSVP,
+      didCheckIn: type === CheckInType.CHECK_IN,
       eventId: eventId!,
       timestamp: Timestamp.now(),
     } as CheckIn;
     for (const { id } of CHECK_IN_FIELDS) {
       window.localStorage.setItem(id, data[id]?.toString() ?? "");
     }
-    const success = await submitCheckIn(db, orgId!, eventId!, checkIn);
-    if (success) {
-      navigate("submitted");
-    } else {
-      throw new Error("You already checked in!");
-    }
+    await submitCheckInOrRsvp(db, orgId!, eventId!, checkIn, type!);
+    navigate("submitted");
   };
 
   React.useEffect(() => {
@@ -57,14 +45,14 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   return event ? (
     <Page className="check-in-page">
       <Helmet>
-        <title>{event.name} Check In &bull; Org Assistant</title>
+        <title>{event.name} {title} &bull; Org Assistant</title>
       </Helmet>
-      <h1 className="header">{event.name}</h1>
+      <h1 className="header">{title} for {event.name}</h1>
       <Form
         className="check-in-form"
         fields={CHECK_IN_FIELDS}
-        initialData={getInitialData()}
-        submitText="Check In"
+        initialData={getSavedUserData()}
+        submitText={title}
         submitIcon={solid("paper-plane")}
         onSubmit={onFormSubmit}
       />

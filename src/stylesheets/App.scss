@@ -16,7 +16,7 @@ h1 {
   margin: 0;
 }
 
-input[type=text], input[type=number], input[type=email], input[type=password], input[type=url] {
+input[type=text], input[type=number], input[type=email], input[type=password], input[type=url], .text-input {
   padding: 20px;
   font-family: constants.$font-family;
   border-radius: constants.$border-radius;
@@ -31,7 +31,7 @@ input[type=text], input[type=number], input[type=email], input[type=password], i
     font-weight: constants.$normal;
   }
 
-  &:focus {
+  &:focus, &.focus {
     outline: 2px solid constants.$outline-color;
     outline-offset: 2px;
     box-shadow: none;

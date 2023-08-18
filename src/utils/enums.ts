@@ -18,3 +18,12 @@ export enum IconType {
   SUCCESS = "success",
   ERROR = "error",
 }
+
+export enum CheckInType {
+  RSVP = "rsvp",
+  CHECK_IN = "check-in"
+}
+
+export enum FilterType {
+  BOOLEAN = "boolean",
+}

@@ -1,9 +1,16 @@
 import React from "react";
-import { InputType, Modality } from "./enums";
-import type { User, UserCredential } from "firebase/auth";
+import { CheckInType, FilterType, InputType, Modality } from "./enums";
 import { Timestamp } from "firebase/firestore";
 import { Dayjs } from "dayjs";
+import type { User, UserCredential } from "firebase/auth";
 import type { IconDefinition } from "@fortawesome/free-regular-svg-icons";
+import type { RankingInfo } from "@tanstack/match-sorter-utils";
+
+declare module "@tanstack/table-core" {
+  interface FilterMeta {
+    itemRank: RankingInfo;
+  }
+}
 
 export type FormDataType = FormDataType;
 export type FormValue<T extends FormDataType> = FormFieldWithValue<T>["value"];
@@ -106,9 +113,11 @@ export type CheckIn = {
   email: string,
   schoolId: string,
   year: string,
-  discord: string | null
+  discord: string | null,
+  didRsvp: boolean,
+  didCheckIn: boolean,
   timestamp: Timestamp,
-  eventId: string
+  eventId: string,
 };
 
 export type OrgEvent = {
@@ -138,7 +147,12 @@ export type Org = {
 export type ColumnData<T extends FormDataType> = {
   id: keyof T,
   label: string,
-  getDisplayValue: (value: typeof T[keyof T]) => string,
+  getDisplayValue: (value: typeof T[keyof T]) => string | React.ReactElement,
+};
+
+export type Filter<T extends FormDataType> = {
+  columnId: keyof T,
+  type: FilterType,
 };
 
 export type CategoryData<T extends FormDataType> = {
@@ -154,6 +168,11 @@ export type OrgPageParams = {
 export type CheckInPageParams = {
   orgId: string,
   eventId: string,
+  type: CheckInType,
+};
+
+export type SubmitPageParams = {
+  type: CheckInType,
 };
 
 export type CreatEventPageParams = {

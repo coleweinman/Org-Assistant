@@ -9,10 +9,13 @@ import {
   getDocs,
   onSnapshot,
   query,
+  setDoc,
   updateDoc,
   where,
 } from "firebase/firestore";
 import type { Attendee, CheckIn, Org, OrgEvent, OrgEventWithId } from "./types";
+import { CheckInType } from "./enums";
+import { CHECK_IN_TYPE_INFO } from "./dynamicConstants";
 
 const attendeeConverter: FirestoreDataConverter<Attendee> = {
   toFirestore: (orgEvent: Attendee) => orgEvent as DocumentData,
@@ -54,21 +57,47 @@ export function getAttendees(db: Firestore, orgId: string, seasonId: string, cal
   });
 }
 
-export async function submitCheckIn(db: Firestore, orgId: string, eventId: string, checkIn: CheckIn) {
+export async function submitCheckInOrRsvp(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  checkIn: CheckIn,
+  type: CheckInType,
+): Promise<void | never> {
+  const checkInsCollection = collection(db, "orgs", orgId, "checkIns");
   const q = query<CheckIn>(
-    collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter),
+    checkInsCollection.withConverter<CheckIn>(checkInConverter),
     where("email", "==", checkIn.email),
     where("eventId", "==", eventId),
   );
-  const docs = await getDocs(q);
-  if (!docs.empty) {
-    return false;
+  const snapshot = await getDocs(q);
+  if (!snapshot.empty) {
+    const existing = snapshot.docs[0].data();
+    // Do not allow user to re-rsvp or re-check in
+    if ((
+      existing.didRsvp && type === CheckInType.RSVP
+    ) || existing.didCheckIn) {
+      throw new Error(CHECK_IN_TYPE_INFO[type].errorMessage);
+    }
+    await setDoc(
+      snapshot.docs[0].ref,
+      // Overwrite didRsvp with true if RSVP exists
+      {
+        ...checkIn,
+        didRsvp: checkIn.didRsvp || existing.didRsvp,
+      },
+    );
+  } else {
+    await addDoc(checkInsCollection, checkIn);
   }
-  await addDoc(collection(db, "orgs", orgId, "checkIns"), checkIn);
-  return true;
 }
 
-export function getCheckIns(db: Firestore, orgId: string, eventId: string, callback: (checkIns: CheckIn[]) => void) {
+export function getCheckIns(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  callback: (checkIns: CheckIn[]) => void,
+) {
   const q = query<CheckIn>(
     collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter),
     where("eventId", "==", eventId),

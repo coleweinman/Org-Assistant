@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Table from "./Table";
-import { getColumnDef } from "../utils/helpers";
+import { getColumnDef } from "../utils/staticHelpers";
 import type { OrgEventWithId } from "../utils/types";
-import { EVENT_COLUMNS } from "../utils/constants";
+import { EVENT_COLUMNS } from "../utils/dynamicConstants";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
 type EventTableProps = {

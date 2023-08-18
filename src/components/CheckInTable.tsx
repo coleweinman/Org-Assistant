@@ -2,8 +2,9 @@ import React from "react";
 import { CSVLink } from "react-csv";
 import Table from "./Table";
 import Toast from "./Toast";
-import { copyCheckIns, getCheckInsCsv, getColumnDef } from "../utils/helpers";
-import { CHECK_IN_COLUMNS } from "../utils/constants";
+import { getColumnDef } from "../utils/staticHelpers";
+import { copyCheckIns, getCheckInsCsv } from "../utils/dynamicHelpers";
+import { CHECK_IN_COLUMNS, CHECK_IN_FILTERS } from "../utils/dynamicConstants";
 import type { CheckIn } from "../utils/types";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -32,6 +33,7 @@ const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ eventName, c
         columns={columns}
         tableName="check-in-table"
         tableTitle="Check Ins"
+        filters={CHECK_IN_FILTERS}
         actions={[
           { icon: solid("clipboard"), onClick: copy },
           {

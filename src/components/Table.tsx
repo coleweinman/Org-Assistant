@@ -1,19 +1,24 @@
 import React from "react";
 import {
   type ColumnDef,
+  type ColumnFiltersState,
+  FilterFnOption,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   type Header,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import Filters from "./Filters";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
+import { fuzzyFilter } from "../utils/staticHelpers";
+import type { ActionButton, Filter } from "../utils/types";
 import "../stylesheets/Table.scss";
-import type { ActionButton } from "../utils/types";
 
 type TableProps<T> = {
   data: T[] | null,
@@ -23,6 +28,7 @@ type TableProps<T> = {
   onRowClick?: (row: T) => void,
   actions?: ActionButton[],
   initialSorting?: SortingState,
+  filters?: Filter<T>[],
 }
 
 const Table = <T extends unknown>({
@@ -33,20 +39,32 @@ const Table = <T extends unknown>({
   onRowClick,
   actions = [],
   initialSorting = [],
+  filters = [],
 }: TableProps<T>): React.ReactElement => {
   const [sorting, setSorting] = React.useState<SortingState>(initialSorting);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState<string>("");
 
   const table = useReactTable<T>({
     data: data || [],
     columns,
     state: {
       sorting,
+      columnFilters,
+      globalFilter,
     },
     getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: fuzzyFilter as FilterFnOption<T>,
+    getColumnCanGlobalFilter: () => true,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
   });
+
+  const rows = table.getRowModel().rows;
 
   const getIconClass = (header: Header<T, unknown>): string => {
     switch (header.column.getIsSorted()) {
@@ -83,6 +101,11 @@ const Table = <T extends unknown>({
               </span>
             </th>
           </tr>
+          <tr>
+            <th className="filters-cell" colSpan={columns.length}>
+              <Filters filters={filters} table={table} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+            </th>
+          </tr>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -111,7 +134,7 @@ const Table = <T extends unknown>({
           ))}
         </thead>
         <tbody>
-          {!data || data.length === 0 ? (
+          {rows.length === 0 ? (
             <tr className="loading-row">
               <td colSpan={columns.length}>
                 {data
@@ -120,7 +143,7 @@ const Table = <T extends unknown>({
                 }
               </td>
             </tr>
-          ) : table.getRowModel().rows.map((row) => (
+          ) : rows.map((row) => (
             <tr
               key={row.id}
               className={onRowClick ? "clickable" : ""}

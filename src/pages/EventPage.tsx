@@ -3,19 +3,21 @@ import { Helmet } from "react-helmet-async";
 import { Firestore, Timestamp } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import { regular, solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Loading from "../components/Loading";
 import Page from "../components/Page";
 import EventChart from "../components/EventChart";
 import Form from "../components/Form";
 import CheckInTable from "../components/CheckInTable";
 import { deleteEvent, getCheckIns, getEvent, updateEvent } from "../utils/managers";
-import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/constants";
-import { getDisplayValue, getOrgEventFromFormState, getYearGroups } from "../utils/helpers";
+import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/dynamicConstants";
+import { getDisplayValue, getOrgEventFromFormState } from "../utils/staticHelpers";
+import { getYearGroups } from "../utils/dynamicHelpers";
 import type { CheckIn, EventPageParams, FormState, OrgEvent, YearGroup } from "../utils/types";
 import "../stylesheets/EventPage.scss";
 import ConfirmButton from "../components/ConfirmButton";
 import BackButton from "../components/BackButton";
+import { CheckInType } from "../utils/enums";
 
 type EventPageProps = {
   db: Firestore,
@@ -114,9 +116,15 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
               <div className="event-action-buttons">
                 <button
                   className="icon-button"
-                  onClick={() => window.open(`/orgs/${orgId}/checkin/${eventId}`, "_blank")}
+                  onClick={() => window.open(`/orgs/${orgId}/${CheckInType.CHECK_IN}/${eventId}`, "_blank")}
                 >
                   <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
+                </button>
+                <button
+                  className="icon-button"
+                  onClick={() => window.open(`/orgs/${orgId}/${CheckInType.RSVP}/${eventId}`, "_blank")}
+                >
+                  <FontAwesomeIcon icon={regular("calendar")} />
                 </button>
                 <button className="icon-button" onClick={() => setEditing(true)}>
                   <FontAwesomeIcon icon={solid("pen")} />

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { NAVIGATION_LINKS } from "../utils/constants";
+import { NAVIGATION_LINKS } from "../utils/dynamicConstants";
 import "../stylesheets/NavigationBar.scss";
 
 type NavigationBarProps = {

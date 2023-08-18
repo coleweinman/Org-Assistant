@@ -1,5 +1,5 @@
 import React from "react";
-import { getAuthErrorMessage } from "../utils/helpers";
+import { getAuthErrorMessage } from "../utils/staticHelpers";
 import {
   Auth,
   AuthError,
