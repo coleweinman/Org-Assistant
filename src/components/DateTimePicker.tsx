@@ -1,7 +1,7 @@
 import React, { FocusEventHandler, HTMLProps } from "react";
 import { InputType } from "../utils/enums";
 import dayjs, { Dayjs } from "dayjs";
-import { DATE_FORMAT, INPUT_DATE_FORMAT } from "../utils/constants";
+import { DATE_FORMAT, INPUT_DATE_FORMAT } from "../utils/staticConstants";
 
 type DateTimePickerProps = Omit<HTMLProps<HTMLInputElement>, "value" | "onChange"> & {
   value: Dayjs | null,

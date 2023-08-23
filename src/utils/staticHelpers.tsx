@@ -1,11 +1,12 @@
+import type { ReactElement } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Timestamp } from "firebase/firestore";
 import dayjs, { Dayjs } from "dayjs";
-import { CHECK_IN_COLUMNS, CHECK_IN_FIELDS, DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./constants";
+import { DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./staticConstants";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { AuthError, AuthErrorCodes } from "firebase/auth";
 import type {
-  CheckIn,
   ColumnData,
   FormDataType,
   FormFieldType,
@@ -18,9 +19,11 @@ import type {
   SingleOptionsFieldType,
   YearGroup,
 } from "./types";
-import type { ColumnDef, DeepKeys } from "@tanstack/react-table";
-import { createColumnHelper } from "@tanstack/react-table";
+import { type ColumnDef, createColumnHelper, type DeepKeys, Row } from "@tanstack/react-table";
+import { rankItem } from "@tanstack/match-sorter-utils";
 import { InputType, Modality } from "./enums";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import { FilterMeta } from "@tanstack/table-core/src/types";
 
 //////////////////
 // Date helpers //
@@ -206,7 +209,17 @@ export function getOrgEventFromFormState(
 // Table helpers //
 ///////////////////
 
-function getLabelFromId(value: string, options: FormOption[]): string {
+export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldType<T>[]): ColumnData<T>[] {
+  return fields.map((field) => (
+    {
+      id: field.id,
+      label: field.label,
+      getDisplayValue: (value: string | string[] | Timestamp) => getDisplayValue(value, field),
+    }
+  ));
+}
+
+export function getLabelFromId(value: string, options: FormOption[]): string {
   return options.find(({ id }) => id === value)?.label ?? value;
 }
 
@@ -251,45 +264,47 @@ export function getDisplayValue<T extends FormDataType>(
   }
 }
 
-export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldType<T>[]): ColumnData<T>[] {
-  return fields.map((field) => (
-    {
-      id: field.id,
-      label: field.label,
-      getDisplayValue: (value: string | string[] | Timestamp) => getDisplayValue(value, field),
-    }
+export function getBooleanDisplayValue(value: boolean): ReactElement {
+  return <FontAwesomeIcon icon={value ? solid("check") : solid("xmark")} />;
+}
+
+export function fuzzyFilter<T extends FormDataType>(
+  row: Row<T>,
+  columnId: keyof T,
+  value: string,
+  addMeta: (meta: FilterMeta) => void,
+): boolean {
+  // Rank the item
+  const itemRank = rankItem(row.getValue(columnId as string), value);
+
+  // Store the itemRank info
+  addMeta({
+    itemRank,
+  });
+
+  // Return if the item should be filtered in/out
+  return itemRank.passed;
+}
+
+////////////////////
+// Charts helpers //
+////////////////////
+
+export function getCellFill(colors: string[], index: number, total: number): string {
+  if (total >= colors.length) {
+    return colors[index % colors.length];
+  }
+  return colors[Math.floor((
+    index / (
+      total - 1
+    )
+  ) * (
+    colors.length - 1
+  ))];
+}
+
+export function addTableId(data: YearGroup[], id: string) {
+  return data.map((entry) => (
+    { ...entry, tableId: id }
   ));
-}
-
-export function getCheckInsCsv(checkIns: CheckIn[]) {
-  const clipboardRows: string[] = [CHECK_IN_COLUMNS.map(({ label }) => label).join("\t")];
-  for (const checkIn of checkIns) {
-    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id, getDisplayValue }) => getDisplayValue(checkIn[id])).join("\t"));
-  }
-  return clipboardRows.join("\n");
-}
-
-export async function copyCheckIns(checkIns: CheckIn[]) {
-  await navigator.clipboard.writeText(getCheckInsCsv(checkIns));
-}
-
-////////////////////////
-// Event page helpers //
-////////////////////////
-
-export function getYearGroups(checkIns: CheckIn[]): YearGroup[] {
-  const yearQuantities: Record<string, number> = {};
-  const yearOptions = (
-    CHECK_IN_FIELDS.find(({ id }) => id === "year")! as SingleOptionsFieldType<CheckIn>
-  ).options;
-  for (const { year } of checkIns) {
-    const label = getLabelFromId(year, yearOptions);
-    yearQuantities[label] = (
-      yearQuantities[label] ?? 0
-    ) + 1;
-  }
-  return Object.entries(yearQuantities)
-    .map(([year, quantity]) => (
-      { year, quantity }
-    ));
 }

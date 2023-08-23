@@ -14,7 +14,7 @@ import CheckInPage from "./pages/CheckInPage";
 import EventPage from "./pages/EventPage";
 import SubmitPage from "./pages/SubmitPage";
 import CreateEventPage from "./pages/CreateEventPage";
-import { FIREBASE_CONFIG } from "./utils/constants";
+import { FIREBASE_CONFIG } from "./utils/dynamicConstants";
 import "./stylesheets/App.scss";
 
 const App: React.FunctionComponent = () => {
@@ -69,8 +69,8 @@ const App: React.FunctionComponent = () => {
                 </AuthGuard>
               }
             />
-            <Route path="orgs/:orgId/checkin/:eventId" element={<CheckInPage db={db} />} />
-            <Route path="orgs/:orgId/checkin/:eventId/submitted" element={<SubmitPage />} />
+            <Route path="orgs/:orgId/:type/:eventId" element={<CheckInPage db={db} />} />
+            <Route path="orgs/:orgId/:type/:eventId/submitted" element={<SubmitPage />} />
           </Route>
         </Routes>
       </AuthProvider>

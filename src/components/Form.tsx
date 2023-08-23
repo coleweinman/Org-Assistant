@@ -1,7 +1,7 @@
 import React from "react";
 import FormField from "./FormField";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { convertInitialToFormData, getFormError, getFormFieldWithValue } from "../utils/helpers";
+import { convertInitialToFormData, getFormError, getFormFieldWithValue } from "../utils/staticHelpers";
 import type { FormDataType, FormFieldType, FormState, FormValue } from "../utils/types";
 import type { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 

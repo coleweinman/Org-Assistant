@@ -5,9 +5,9 @@ import { Firestore } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import Form from "../components/Form";
 import { addEvent, getOrg } from "../utils/managers";
-import { CREATE_EVENT_FIELDS } from "../utils/constants";
+import { CREATE_EVENT_FIELDS } from "../utils/dynamicConstants";
 import type { CreatEventPageParams, FormState, Org, OrgEvent } from "../utils/types";
-import { getOrgEventFromFormState } from "../utils/helpers";
+import { getOrgEventFromFormState } from "../utils/staticHelpers";
 import { Helmet } from "react-helmet-async";
 import Page from "../components/Page";
 

@@ -1,27 +1,19 @@
-import { IconType, InputType, Modality } from "./enums";
+import { CheckInType, FilterType, IconType, InputType, Modality } from "./enums";
 import type {
   Attendee,
   CategoryData,
   CheckIn,
   ColumnData,
+  Filter,
   FormFieldType,
   NavLink,
   OrgEvent,
   OrgEventWithId,
 } from "./types";
-import { getColumnsFromFields, timestampToDate } from "./helpers";
+import { getBooleanDisplayValue, getColumnsFromFields, timestampToDate } from "./staticHelpers";
 import { Dayjs } from "dayjs";
 import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
-
-export const TOAST_TIMEOUT = 5000;
-export const TOAST_TRANSITION_TIME = 200;
-
-export const INPUT_DATE_FORMAT = "M/DD h:mma";
-export const DATE_FORMAT = "M/DD/YYYY h:mma";
-
-export const EMAIL_REGEX = /^([a-zA-Z\d_.\-+])+@(([a-zA-Z\d-])+\.)+([a-zA-Z\d]{2,4})+$/;
-export const URL_REGEX = /^(http(s):\/\/.)[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)$/;
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBlMx0f35Ia49khVmeYFH6dmmpJEx2uMC0",
@@ -42,6 +34,23 @@ const MODALITY_OPTIONS: { id: Modality, label: string }[] = [
 export const ICON_TYPE_TO_ICON: Record<IconType, IconDefinition> = {
   [IconType.SUCCESS]: solid("check-circle"),
   [IconType.ERROR]: solid("xmark-circle"),
+};
+
+export const CHECK_IN_TYPE_INFO: Record<CheckInType, {
+  display: string,
+  submitMessage: string,
+  errorMessage: string,
+}> = {
+  [CheckInType.RSVP]: {
+    display: "RSVP",
+    submitMessage: "You have successfully RSVP'd!",
+    errorMessage: "You have already RSVP'd for this event",
+  },
+  [CheckInType.CHECK_IN]: {
+    display: "Check In",
+    submitMessage: "You are now checked in!",
+    errorMessage: "You have already checked in",
+  },
 };
 
 export const NAVIGATION_LINKS: NavLink[] = [
@@ -129,7 +138,14 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
 
 export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
   ...getColumnsFromFields(CHECK_IN_FIELDS),
+  { id: "didRsvp", label: "RSVP'd", getDisplayValue: getBooleanDisplayValue },
+  { id: "didCheckIn", label: "Checked In", getDisplayValue: getBooleanDisplayValue },
   { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate },
+];
+
+export const CHECK_IN_FILTERS: Filter<CheckIn>[] = [
+  { columnId: "didRsvp", type: FilterType.BOOLEAN },
+  { columnId: "didCheckIn", type: FilterType.BOOLEAN },
 ];
 
 export const EVENT_COLUMNS: ColumnData<OrgEventWithId>[] = [

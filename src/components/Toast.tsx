@@ -1,7 +1,8 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconType } from "../utils/enums";
-import { ICON_TYPE_TO_ICON, TOAST_TIMEOUT, TOAST_TRANSITION_TIME } from "../utils/constants";
+import { TOAST_TIMEOUT, TOAST_TRANSITION_TIME } from "../utils/staticConstants";
+import { ICON_TYPE_TO_ICON } from "../utils/dynamicConstants";
 
 type ToastProps = {
   message: string | null,

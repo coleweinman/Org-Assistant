@@ -1,7 +1,7 @@
 import React from "react";
 import Table from "./Table";
-import { ATTENDEE_COLUMNS } from "../utils/constants";
-import { getColumnDef } from "../utils/helpers";
+import { ATTENDEE_COLUMNS } from "../utils/dynamicConstants";
+import { getColumnDef } from "../utils/staticHelpers";
 import type { Attendee } from "../utils/types";
 
 type AttendeeTableProps = {
