@@ -25,7 +25,6 @@ type EventPageProps = {
 
 const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const [checkIns, setCheckIns] = React.useState<CheckIn[] | null>(null);
-  const [yearGroups, setYearGroups] = React.useState<YearGroup[]>([]);
   const [checkInYearGroups, setCheckInYearGroups] = React.useState<YearGroup[]>([]);
   const [rsvpYearGroups, setRsvpYearGroups] = React.useState<YearGroup[]>([]);
   const [noShowYearGroups, setNoShowYearGroups] = React.useState<YearGroup[]>([]);
@@ -83,7 +82,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         <Helmet>
           <title>{event.name} &bull; Org Assistant</title>
         </Helmet>
-        <BackButton />
+        <BackButton to={`/orgs/${orgId}`} />
         <h1 className="header">{event.name}</h1>
         <div className={`section event-settings ${editing ? "editing" : ""}`}>
           {editing ? (

@@ -46,7 +46,7 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db, seasonId }) => {
         <Helmet>
           <title>{org.name} &bull; Org Assistant</title>
         </Helmet>
-        <BackButton />
+        <BackButton to="/" />
         <h1 className="header">{org.name}</h1>
         <EventTable events={events} />
         <AttendeeTable attendees={attendees} />
