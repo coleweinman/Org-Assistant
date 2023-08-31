@@ -1,16 +1,12 @@
-import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import { onRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { initializeApp } from "firebase-admin/app";
+import { FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
+initializeApp();
+const db = getFirestore();
 
-admin.initializeApp();
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
-const FieldPath = admin.firestore.FieldPath;
-
-exports.getEvents = functions.https.onRequest(async (request, response) => {
+export const getEvents = onRequest(async (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
 
   if (request.method === "OPTIONS") {
@@ -26,11 +22,13 @@ exports.getEvents = functions.https.onRequest(async (request, response) => {
   const seasonId = request.query.seasonId;
   if (orgId === undefined) {
     response
-        .status(400)
-        .json({"status": "error", "message": "Org Id not provided."});
+      .status(400)
+      .json({ "status": "error", "message": "Org Id not provided." });
     return;
   }
-  let q: any = db.collection("orgs").doc(orgId as string).collection("events");
+  let q: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection("orgs")
+    .doc(orgId as string)
+    .collection("events");
   if (seasonId !== undefined) {
     q = q.where("seasonId", "==", seasonId);
   }
@@ -51,70 +49,79 @@ exports.getEvents = functions.https.onRequest(async (request, response) => {
     events.push(newEvent);
   }
   // functions.logger.info("Hello logs!", { structuredData: true });
-  response.json({"status": "success", "data": {"events": events}});
+  response.json({ "status": "success", "data": { "events": events } });
 });
 
-export const onCreateCheckIn = functions.firestore
-    .document("orgs/{orgId}/checkIns/{checkInId}")
-    .onCreate(async (checkInDoc, context) => {
-      const checkIn = checkInDoc.data();
-      const name: string = checkIn.name;
-      const email: string = checkIn.email;
+export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const { name, email, eventId } = data.data();
+  const { orgId } = params;
 
-      // Get event
-      const eventDoc = await db
-          .collection("orgs")
-          .doc(context.params.orgId)
-          .collection("events")
-          .doc(checkIn.eventId)
-          .get();
-      const event = eventDoc.data()!;
-      const eventSeasonId = event.seasonId;
+  // Get event
+  const eventDoc = await db
+    .collection("orgs")
+    .doc(orgId)
+    .collection("events")
+    .doc(eventId)
+    .get();
+  if (!eventDoc) {
+    console.error(`Could not find created doc orgs/${orgId}/events/${eventId}`);
+    return;
+  }
+  const event = eventDoc.data()!;
+  const eventSeasonId = event.seasonId;
 
-      // Update attendee data or create new attendee doc if new
-      const attendeeCol = db
-          .collection("orgs")
-          .doc(context.params.orgId)
-          .collection("attendees");
-      const attendeeQuery = await attendeeCol
-          .where("email", "==", email.toLowerCase())
-          .get();
-      const updateData = [];
-      let attendeeName = name;
-      const newAttendee = attendeeQuery.empty;
-      let attendeeDocRef;
-      if (newAttendee) {
-        // Add attendee doc
-        attendeeDocRef = await attendeeCol.add({
-          "name": name,
-          "email": email,
-        });
-      } else {
-        attendeeDocRef = attendeeQuery.docs[0].ref;
-        attendeeName = attendeeQuery.docs[0].data().name;
-        // Update name if different than existing
-        if (attendeeName !== checkIn.name) {
-          updateData.push(new FieldPath("name"));
-          updateData.push(name);
-        }
-      }
-      // Update attendance statistics
-      updateData.push(new FieldPath("totalEventsAttended"));
-      updateData.push(FieldValue.increment(1));
-      updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
-      updateData.push(FieldValue.increment(1));
-      updateData.push(new FieldPath("lastActiveSeasonId"));
-      updateData.push(eventSeasonId);
-      await attendeeDocRef.update(
-          updateData[0],
-          updateData[1],
-          ...updateData.slice(2)
-      );
-
-      // Update event
-      const updateEventData = {
-        "attendeeCount": FieldValue.increment(1),
-        "newAttendeeCount": FieldValue.increment(newAttendee ? 1 : 0),
-      };
-      await eventDoc.ref.update(updateEventData);
+  // Update attendee data or create new attendee doc if new
+  const attendeeCol = db
+    .collection("orgs")
+    .doc(orgId)
+    .collection("attendees");
+  const attendeeQuery = await attendeeCol
+    .where("email", "==", email.toLowerCase())
+    .get();
+  const updateData = [];
+  let attendeeName = name;
+  const newAttendee = attendeeQuery.empty;
+  let attendeeDocRef;
+  if (newAttendee) {
+    // Add attendee doc
+    attendeeDocRef = await attendeeCol.add({
+      "name": name,
+      "email": email,
     });
+  } else {
+    attendeeDocRef = attendeeQuery.docs[0].ref;
+    attendeeName = attendeeQuery.docs[0].data().name;
+    // Update name if different from existing
+    if (attendeeName !== name) {
+      updateData.push(new FieldPath("name"));
+      updateData.push(name);
+    }
+  }
+  // Update attendance statistics
+  updateData.push(new FieldPath("totalEventsAttended"));
+  updateData.push(FieldValue.increment(1));
+  updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
+  updateData.push(FieldValue.increment(1));
+  updateData.push(new FieldPath("lastActiveSeasonId"));
+  updateData.push(eventSeasonId);
+  await attendeeDocRef.update(
+    updateData[0],
+    updateData[1],
+    ...updateData.slice(2),
+  );
+
+  const isRsvp = event.didRsvp && !event.didCheckIn;
+
+  // Update event
+  const updateEventData = {
+    rsvpCount: FieldValue.increment(isRsvp ? 1 : 0),
+    newRsvpCount: FieldValue.increment(isRsvp && newAttendee ? 1 : 0),
+    attendeeCount: FieldValue.increment(!isRsvp ? 1 : 0),
+    newAttendeeCount: FieldValue.increment(!isRsvp && newAttendee ? 1 : 0),
+  };
+  await eventDoc.ref.update(updateEventData);
+});
