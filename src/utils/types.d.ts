@@ -142,6 +142,7 @@ export type Org = {
   id: string,
   name: string,
   currentSeasonId: string,
+  seasons: string[],
 };
 
 export type ColumnData<T extends FormDataType> = {

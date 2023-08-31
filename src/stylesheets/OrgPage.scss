@@ -1,3 +1,12 @@
+@use "constants";
+
 .org-page {
   padding: 30px 40px;
+
+  .season-select {
+    position: absolute;
+    right: 40px;
+    top: 40px;
+    min-width: 150px;
+  }
 }

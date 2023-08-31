@@ -47,7 +47,7 @@ const App: React.FunctionComponent = () => {
                 path=":orgId"
                 element={
                   <AuthGuard>
-                    <OrgPage db={db} seasonId="Spring 2023" />
+                    <OrgPage db={db} />
                   </AuthGuard>
                 }
               >
