@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   DocumentData,
   Firestore,
@@ -12,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import type { Attendee, CheckIn, Org, OrgEvent, OrgEventWithId } from "./types";
 import { CheckInType } from "./enums";
@@ -178,7 +178,18 @@ export async function updateEvent(db: Firestore, orgId: string, eventId: string,
 }
 
 export async function deleteEvent(db: Firestore, orgId: string, eventId: string) {
-  await deleteDoc(doc(db, "orgs", orgId, "events", eventId));
+  const checkInsSnapshot = await getDocs(query(
+    collection(db, "orgs", orgId, "checkIns"),
+    where("eventId", "==", eventId),
+  ));
+  const batch = writeBatch(db);
+  // Delete event
+  batch.delete(doc(db, "orgs", orgId, "events", eventId));
+  // Delete all associated check ins
+  checkInsSnapshot.forEach((checkIn) => {
+    batch.delete(doc(db, "orgs", orgId, "checkIns", checkIn.id));
+  });
+  await batch.commit();
 }
 
 export function getOrgs(db: Firestore, uid: string, callback: (events: Org[]) => void) {
