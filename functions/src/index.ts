@@ -6,7 +6,7 @@ import { FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
 initializeApp();
 const db = getFirestore();
 
-export const getEvents = onRequest(async (request, response) => {
+export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
 
   if (request.method === "OPTIONS") {
@@ -19,13 +19,22 @@ export const getEvents = onRequest(async (request, response) => {
   }
 
   const orgId = request.query.orgId;
-  const seasonId = request.query.seasonId;
   if (orgId === undefined) {
     response
       .status(400)
       .json({ "status": "error", "message": "Org Id not provided." });
     return;
   }
+  const orgData = (
+    await db.collection("orgs").doc(orgId as string).get()
+  ).data();
+  if (!orgData) {
+    response
+      .status(400)
+      .json({ "status": "error", "message": "Could not find data associated with org " + orgId });
+    return;
+  }
+  const seasonId = orgData.currentSeasonId;
   let q: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection("orgs")
     .doc(orgId as string)
     .collection("events");
