@@ -110,9 +110,9 @@ export function getEventRemoveUpdates(rsvp: boolean, checkIn: boolean, isNewAtte
   return [...rsvpUpdates, ...checkInUpdates];
 }
 
-export function setUpdates(t: Transaction, ref: DocumentReference, updates: UpdateData) {
+export function setUpdates(db: Transaction, ref: DocumentReference, updates: UpdateData) {
   if (updates.length < 2) {
     return;
   }
-  t.update(ref, updates[0], updates[1], ...updates.slice(2));
+  db.update(ref, updates[0], updates[1], ...updates.slice(2));
 }

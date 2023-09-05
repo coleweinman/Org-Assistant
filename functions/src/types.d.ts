@@ -29,6 +29,13 @@ export type CheckIn = {
   eventId: string,
 };
 
+export type LinkedEvent = {
+  org: Pick<Org, "id" | "name">,
+  event: Pick<OrgEvent, "name"> & {
+    id: string,
+  },
+};
+
 export type OrgEvent = {
   name: string,
   seasonId: string,
@@ -43,11 +50,12 @@ export type OrgEvent = {
   newRsvpCount: number,
   newAttendeeCount: number,
   attendeeCount: number,
+  linkedEvents: LinkedEvent[],
 };
 
 export type PublicOrgEvent = Omit<
   OrgEvent,
-  "seasonId" | "newAttendeeCount" | "attendeeCount" | "rsvpCount" | "newRsvpCount"
+  "seasonId" | "newAttendeeCount" | "attendeeCount" | "rsvpCount" | "newRsvpCount" | "linkedEvents"
 >;
 
 export type Org = {
