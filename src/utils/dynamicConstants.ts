@@ -100,6 +100,8 @@ export const CREATE_EVENT_FIELDS: FormFieldType<Omit<OrgEvent, "linkedEvents">>[
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
   { id: "description", label: "Description", required: false, inputType: InputType.TEXT },
+  { id: "checkInPageNote", label: "Check In Page Note", required: false, inputType: InputType.TEXT },
+  { id: "rsvpPageNote", label: "RSVP Page Note", required: false, inputType: InputType.TEXT },
   { id: "location", label: "Location", required: false, inputType: InputType.TEXT },
   { id: "startTime", label: "Start Time", required: true, inputType: InputType.DATE },
   {

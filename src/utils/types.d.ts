@@ -144,6 +144,8 @@ export type OrgEvent = {
   newRsvpCount: number,
   newAttendeeCount: number,
   attendeeCount: number,
+  checkInPageNote: string,
+  rsvpPageNote: string,
   linkedEvents: LinkedEvent[],
 };
 
