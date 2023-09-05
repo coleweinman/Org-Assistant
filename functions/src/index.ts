@@ -1,81 +1,22 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
-import { firestore } from "firebase-admin";
-import type { Attendee, CheckIn, Org, OrgEvent, PublicOrgEvent } from "./types";
+import { getFirestore } from "firebase-admin/firestore";
+import { orgConverter } from "./converters";
+import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
+import {
+  getAttendeeAddUpdates,
+  getAttendeeRemoveUpdates,
+  getEventAddUpdates,
+  getEventRemoveUpdates,
+  getSeasonId,
+  getWasNewAttendee,
+  setUpdates,
+} from "./helpers";
+import type { CheckIn, Org, PublicOrgEvent } from "./types";
 
 initializeApp();
 const db = getFirestore();
-
-const attendeeConverter: firestore.FirestoreDataConverter<Attendee> = {
-  toFirestore: (orgEvent: Attendee) => orgEvent as firestore.DocumentData,
-  fromFirestore: (doc: firestore.DocumentData) => doc.data() as Attendee,
-};
-
-const eventConverter: firestore.FirestoreDataConverter<OrgEvent> = {
-  toFirestore: (orgEvent: OrgEvent) => orgEvent as firestore.DocumentData,
-  fromFirestore: (doc: firestore.DocumentData) => doc.data() as OrgEvent,
-};
-
-const orgConverter: firestore.FirestoreDataConverter<Org> = {
-  toFirestore: (orgEvent: Org) => orgEvent as firestore.DocumentData,
-  fromFirestore: (doc: firestore.DocumentData) => (
-    {
-      ...(
-        doc.data() as Omit<Org, "id">
-      ),
-      id: doc.id,
-    }
-  ),
-};
-
-// A season is expected to have the format "[Fall/Spring] [year]", e.g. "Fall 2023"
-function decrementSeasonId(seasonId: string, seasonsActive: string[]): string {
-  const newSeasons = seasonsActive.filter((season) => season !== seasonId);
-  // Find minimum season
-  let newLatestSeason = newSeasons[0].split(" ");
-  for (let i = 1; i < newSeasons.length; i++) {
-    const [season, year] = newSeasons[i];
-    // seasonA is after seasonB if:
-    // - seasonA year is greater than seasonB year
-    // - seasonA is in fall of the same year as seasonB
-    if (parseInt(year) > parseInt(newLatestSeason[1]) || (
-      season === "Fall" && newLatestSeason[0] === "Spring" && parseInt(year) === parseInt(newLatestSeason[1])
-    )) {
-      newLatestSeason = [season, year];
-    }
-  }
-  return newLatestSeason.join(" ");
-}
-
-function getEventsCollection(db: firestore.Firestore, orgId: string): firestore.CollectionReference<OrgEvent> {
-  return db.collection("orgs")
-    .doc(orgId as string)
-    .collection("events")
-    .withConverter<OrgEvent>(eventConverter);
-}
-
-function getEventDoc(
-  db: firestore.Firestore,
-  orgId: string,
-  eventId: string,
-): firestore.DocumentReference<OrgEvent> {
-  return db
-    .collection("orgs")
-    .doc(orgId)
-    .collection("events")
-    .doc(eventId)
-    .withConverter<OrgEvent>(eventConverter);
-}
-
-function getAttendeesCollection(db: firestore.Firestore, orgId: string): firestore.CollectionReference<Attendee> {
-  return db
-    .collection("orgs")
-    .doc(orgId)
-    .collection("attendees")
-    .withConverter<Attendee>(attendeeConverter);
-}
 
 export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
@@ -110,21 +51,10 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
     .where("seasonId", "==", seasonId)
     .orderBy("startTime")
     .get();
-  // Add all events to array with relevant data
-  const events: PublicOrgEvent[] = [];
-  querySnapshot.forEach((doc) => {
-    const event = doc.data();
-    const newEvent: PublicOrgEvent = {
-      name: event.name,
-      imageUrl: event.imageUrl,
-      description: event.description,
-      location: event.location,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      modality: event.modality,
-      virtualEventUrl: event.virtualEventUrl,
-    };
-    events.push(newEvent);
+  // Only include relevant data
+  const events: PublicOrgEvent[] = querySnapshot.docs.map((doc) => {
+    const { name, imageUrl, description, location, startTime, endTime, modality, virtualEventUrl } = doc.data();
+    return { name, imageUrl, description, location, startTime, endTime, modality, virtualEventUrl };
   });
   response.json({ status: "success", data: { events } });
 });
@@ -137,62 +67,90 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
   const { name, email, eventId, didRsvp, didCheckIn } = data.data() as CheckIn;
   const { orgId } = params;
 
-  // Get event
-  const eventDoc = await getEventDoc(db, orgId, eventId).get();
-  const event = eventDoc?.data();
-  if (!eventDoc || !event) {
-    console.error(`Could not find created doc orgs/${orgId}/events/${eventId}`);
+  if (!didRsvp && !didCheckIn) {
+    console.error("Attendee neither RSVP'd nor checked in. Deleting check in...");
+    await data.ref.delete();
     return;
   }
-  const eventSeasonId = event.seasonId;
 
-  // Update attendee data or create new attendee doc if new
-  const attendeeQuery = await getAttendeesCollection(db, orgId).where("email", "==", email.toLowerCase()).get();
-  const isNewAttendee = attendeeQuery.empty;
-  const updateData: (FieldPath | FieldValue | string)[] = [];
-  let attendeeDocRef;
-  if (isNewAttendee) {
-    // Add attendee doc
-    attendeeDocRef = await getAttendeesCollection(db, orgId).add({
-      name,
-      email,
-      // Default values, to be updated below
-      totalEventsAttended: 0,
-      lastActiveSeasonId: "",
-      seasonAttendance: {
-        [eventSeasonId]: 0,
-      },
-    });
-  } else {
-    attendeeDocRef = attendeeQuery.docs[0].ref;
-    // Update name if different from existing
-    if (attendeeQuery.docs[0].data().name !== name) {
-      updateData.push(new FieldPath("name"));
-      updateData.push(name);
+  await db.runTransaction(async (t) => {
+    // Get event season ID
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
     }
-  }
-  // Update attendance statistics
-  updateData.push(new FieldPath("totalEventsAttended"));
-  updateData.push(FieldValue.increment(1));
-  updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
-  updateData.push(FieldValue.increment(1));
-  updateData.push(new FieldPath("lastActiveSeasonId"));
-  updateData.push(eventSeasonId);
-  await attendeeDocRef.update(
-    updateData[0],
-    updateData[1],
-    ...updateData.slice(2),
-  );
 
-  const isRsvp = didRsvp && !didCheckIn;
-  // Update event
-  const updateEventData = {
-    rsvpCount: FieldValue.increment(isRsvp ? 1 : 0),
-    newRsvpCount: FieldValue.increment(isRsvp && isNewAttendee ? 1 : 0),
-    attendeeCount: FieldValue.increment(!isRsvp ? 1 : 0),
-    newAttendeeCount: FieldValue.increment(!isRsvp && isNewAttendee ? 1 : 0),
-  };
-  await eventDoc.ref.update(updateEventData);
+    // Update attendee data or create new attendee doc if new
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    const isNewAttendee = !attendeeDoc;
+    const attendeeRef = isNewAttendee ? getAttendeesCollection(db, orgId).doc() : attendeeDoc.ref;
+    if (isNewAttendee) {
+      await t.set(attendeeRef, {
+        name: "",
+        email: email.toLowerCase(),
+        // Default values, to be updated below
+        totalEventsAttended: 0,
+        totalEventsRsvpd: 0,
+        lastActiveSeasonId: "",
+        seasonAttendance: {
+          [seasonId]: 0,
+        },
+        seasonRsvps: {
+          [seasonId]: 0,
+        },
+      });
+    }
+
+    setUpdates(t, attendeeRef, getAttendeeAddUpdates(didRsvp, didCheckIn, name, seasonId));
+    setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
+  });
+});
+
+export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const oldCheckIn = data.before.data() as CheckIn;
+  const { name, email, eventId, didRsvp, didCheckIn } = data.after.data() as CheckIn;
+  const { orgId } = params;
+
+  await db.runTransaction(async (t) => {
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
+    }
+
+    // Update attendee data
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    if (!attendeeDoc) {
+      console.error("Could not find attendee associated with check in");
+      return;
+    }
+    const attendee = attendeeDoc.data();
+    const addRsvp = didRsvp && !oldCheckIn.didRsvp;
+    const removeRsvp = !didRsvp && oldCheckIn.didRsvp;
+    const addCheckIn = didCheckIn && !oldCheckIn.didCheckIn;
+    const removeCheckIn = !didCheckIn && oldCheckIn.didCheckIn;
+    const wasNewAttendee = getWasNewAttendee(removeRsvp, removeCheckIn, seasonId, attendee);
+
+    if (!didCheckIn && !didRsvp) {
+      console.log("Attendee neither RSVP'd nor checked in. Deleting check in...");
+      t.delete(data.after.ref);
+      return;
+    }
+
+    const attendeeUpdates = [
+      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, seasonId),
+      ...getAttendeeRemoveUpdates(removeRsvp, removeCheckIn, seasonId, attendee),
+    ];
+    const eventUpdates = [
+      ...getEventAddUpdates(addRsvp, addCheckIn, wasNewAttendee),
+      ...getEventRemoveUpdates(removeRsvp, removeCheckIn, wasNewAttendee),
+    ];
+    setUpdates(t, attendeeDoc.ref, attendeeUpdates);
+    setUpdates(t, getEventDoc(db, orgId, eventId), eventUpdates);
+  });
 });
 
 export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
@@ -200,45 +158,29 @@ export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkIn
     console.error("No data associated with the event");
     return;
   }
-  const { email, eventId } = data.data() as CheckIn;
+  const { email, eventId, didCheckIn, didRsvp } = data.data() as CheckIn;
   const { orgId } = params;
 
-  // Get event
-  const eventDoc = await getEventDoc(db, orgId, eventId).get();
-  const event = eventDoc.data();
-  if (!eventDoc || !event) {
-    console.error(`Could not find created doc orgs/${orgId}/events/${eventId}`);
-    return;
-  }
-  const eventSeasonId = event.seasonId;
+  await db.runTransaction(async (t) => {
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
+    }
 
-  // Update attendee data
-  const attendeeCol = getAttendeesCollection(db, orgId);
-  const attendeeQuery = await attendeeCol.where("email", "==", email.toLowerCase()).get();
-  if (attendeeQuery.empty) {
-    return;
-  }
-  const updateData: (FieldPath | FieldValue | string)[] = [];
-  const attendeeData = attendeeQuery.docs[0].data();
-  const attendeeDocRef = attendeeQuery.docs[0].ref;
+    // Update attendee data
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    if (!attendeeDoc) {
+      return;
+    }
+    const attendee = attendeeDoc.data();
+    const wasNewAttendee = getWasNewAttendee(didRsvp, didCheckIn, seasonId, attendee);
 
-  // Delete attendee if they have not attended any events
-  if (attendeeData.totalEventsAttended <= 1) {
-    await attendeeDocRef.delete();
-    return;
-  }
-
-  // Decrement season attendance and go back a season if necessary
-  if (attendeeData.seasonAttendance[eventSeasonId] <= 1) {
-    updateData.push(new FieldPath("lastActiveSeasonId"));
-    updateData.push(decrementSeasonId(eventSeasonId, Object.keys(attendeeData.seasonAttendance)));
-    updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
-    updateData.push(FieldValue.delete());
-  } else {
-    updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
-    updateData.push(FieldValue.increment(-1));
-  }
-  updateData.push(new FieldPath("totalEventsAttended"));
-  updateData.push(FieldValue.increment(-1));
-  await attendeeDocRef.update(updateData[0], updateData[1], ...updateData.slice(2));
+    // Delete attendee if they were new, otherwise update attendance stats accordingly
+    if (wasNewAttendee) {
+      t.delete(attendeeDoc.ref);
+    } else {
+      setUpdates(t, attendeeDoc.ref, getAttendeeRemoveUpdates(didRsvp, didCheckIn, seasonId, attendee));
+    }
+    setUpdates(t, getEventDoc(db, orgId, eventId), getEventRemoveUpdates(didRsvp, didCheckIn, wasNewAttendee));
+  });
 });
