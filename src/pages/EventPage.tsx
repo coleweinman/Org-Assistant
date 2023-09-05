@@ -157,7 +157,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
           </div>
           <EventChart checkIns={checkInYearGroups} rsvps={rsvpYearGroups} noShows={noShowYearGroups} />
         </div>
-        <CheckInTable eventName={event.name} checkIns={checkIns} />
+        <CheckInTable db={db} orgId={orgId!} eventId={eventId!} eventName={event.name} checkIns={checkIns} />
       </Page>
     );
   }

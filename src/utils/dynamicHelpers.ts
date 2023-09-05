@@ -2,11 +2,18 @@
  * @description Helpers that rely on app constants
  */
 
-import { Timestamp } from "firebase/firestore";
-import { CHECK_IN_COLUMNS, CHECK_IN_FIELDS } from "./dynamicConstants";
+import { Firestore, Timestamp } from "firebase/firestore";
+import {
+  CHECK_IN_COLUMNS,
+  CHECK_IN_FIELDS,
+  REVERSE_CHECK_IN_HEADER_TRANSFORM,
+  REVERSE_CHECK_IN_TRANSFORM,
+} from "./dynamicConstants";
 import { getLabelFromId } from "./staticHelpers";
 import type { CheckIn, SingleOptionsFieldType, YearGroup } from "./types";
-import { InputType } from "./enums";
+import { InputType, TableType } from "./enums";
+import { parse } from "papaparse";
+import { importCheckIns } from "./managers";
 
 ///////////////////
 // Table helpers //
@@ -15,13 +22,50 @@ import { InputType } from "./enums";
 export function getCheckInsCsv(checkIns: CheckIn[]) {
   const clipboardRows: string[] = [CHECK_IN_COLUMNS.map(({ label }) => label).join("\t")];
   for (const checkIn of checkIns) {
-    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id, getDisplayValue }) => getDisplayValue(checkIn[id])).join("\t"));
+    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id, getDisplayValue, type }) => type === TableType.DATE
+      ? getDisplayValue(checkIn[id])
+      : checkIn[id]).join("\t"));
   }
   return clipboardRows.join("\n");
 }
 
 export async function copyCheckIns(checkIns: CheckIn[]) {
   await navigator.clipboard.writeText(getCheckInsCsv(checkIns));
+}
+
+export function getCheckInsFromCsv(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  file: File,
+  prevCheckIns: CheckIn[],
+  onCompleted: () => void = () => {},
+  onError: (e: any) => void = () => {},
+) {
+  parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: REVERSE_CHECK_IN_HEADER_TRANSFORM,
+    transform: REVERSE_CHECK_IN_TRANSFORM,
+    complete: (results) => {
+      // TODO: Validate imported results
+      importCheckIns(
+        db,
+        orgId,
+        eventId,
+        (
+          results.data as Omit<CheckIn, "id" | "eventId">[]
+        ).map(({ email, ...checkIn }) => (
+          {
+            ...checkIn,
+            email: email.toLowerCase(),
+            eventId,
+          }
+        )),
+        prevCheckIns,
+      ).then(onCompleted).catch(onError);
+    },
+  });
 }
 
 ////////////////////////

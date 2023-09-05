@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckInType, FilterType, InputType, Modality } from "./enums";
+import { CheckInType, FilterType, InputType, Modality, TableType } from "./enums";
 import { Timestamp } from "firebase/firestore";
 import { Dayjs } from "dayjs";
 import type { User, UserCredential } from "firebase/auth";
@@ -102,13 +102,14 @@ export type NavLink = {
 };
 
 export type Attendee = {
-  id: string,
   name: string,
   email: string,
-  totalEventsAttended: number
+  totalEventsAttended: number,
+  totalEventsRsvpd: number,
 };
 
 export type CheckIn = {
+  id: string,
   name: string,
   email: string,
   schoolId: string,
@@ -130,6 +131,8 @@ export type OrgEvent = {
   endTime: Timestamp,
   modality: Modality,
   virtualEventUrl?: string,
+  rsvpCount: number,
+  newRsvpCount: number,
   newAttendeeCount: number,
   attendeeCount: number,
 };
@@ -149,7 +152,12 @@ export type ColumnData<T extends FormDataType> = {
   id: keyof T,
   label: string,
   getDisplayValue: (value: typeof T[keyof T]) => string | React.ReactElement,
+  type: TableType,
 };
+
+export type HeaderTransform<T extends FormDataType> = (key: keyof T) => string;
+export type ReverseHeaderTransform<T extends FormDataType> = (label: string) => keyof T | never;
+export type ReverseDataTransform<T extends FormDataType> = (value: string, key: keyof T) => typeof T[keyof T];
 
 export type Filter<T extends FormDataType> = {
   columnId: keyof T,
