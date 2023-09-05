@@ -203,6 +203,8 @@ export function getOrgEventFromFormState(
     seasonId,
     imageUrl: state.imageUrl ?? "",
     description: state.description ?? "",
+    checkInPageNote: state.checkInPageNote ?? "",
+    rsvpPageNote: state.rsvpPageNote ?? "",
     location: state.location ?? "",
     startTime: Timestamp.fromMillis((
       state.startTime as Dayjs

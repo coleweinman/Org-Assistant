@@ -51,6 +51,14 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
         <title>{event.name} {title} &bull; Org Assistant</title>
       </Helmet>
       <h1 className="header">{title} for {event.name}</h1>
+      {
+        type === CheckInType.RSVP &&
+        <body>{event.rsvpPageNote}</body>
+      }
+      {
+        type === CheckInType.CHECK_IN &&
+        <body>{event.checkInPageNote}</body>
+      }
       <Form
         className="check-in-form"
         fields={CHECK_IN_FIELDS}
