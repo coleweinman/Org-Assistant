@@ -1,8 +1,14 @@
-import { firestore } from "firebase-admin";
+import {
+  CollectionReference,
+  DocumentReference,
+  Firestore,
+  QueryDocumentSnapshot,
+  Transaction,
+} from "firebase-admin/firestore";
 import { Attendee, OrgEvent } from "./types";
 import { attendeeConverter, eventConverter } from "./converters";
 
-export function getEventsCollection(db: firestore.Firestore, orgId: string): firestore.CollectionReference<OrgEvent> {
+export function getEventsCollection(db: Firestore, orgId: string): CollectionReference<OrgEvent> {
   return db.collection("orgs")
     .doc(orgId as string)
     .collection("events")
@@ -10,10 +16,10 @@ export function getEventsCollection(db: firestore.Firestore, orgId: string): fir
 }
 
 export function getEventDoc(
-  db: firestore.Firestore,
+  db: Firestore,
   orgId: string,
   eventId: string,
-): firestore.DocumentReference<OrgEvent> {
+): DocumentReference<OrgEvent> {
   return db
     .collection("orgs")
     .doc(orgId)
@@ -23,9 +29,9 @@ export function getEventDoc(
 }
 
 export function getAttendeesCollection(
-  db: firestore.Firestore,
+  db: Firestore,
   orgId: string,
-): firestore.CollectionReference<Attendee> {
+): CollectionReference<Attendee> {
   return db
     .collection("orgs")
     .doc(orgId)
@@ -34,11 +40,11 @@ export function getAttendeesCollection(
 }
 
 export async function getAttendeeDoc(
-  t: firestore.Transaction,
-  db: firestore.Firestore,
+  t: Transaction,
+  db: Firestore,
   orgId: string,
   email: string,
-): Promise<firestore.QueryDocumentSnapshot<Attendee> | null> {
+): Promise<QueryDocumentSnapshot<Attendee> | null> {
   const attendeeSnapshot = await t.get(getAttendeesCollection(db, orgId).where("email", "==", email.toLowerCase()));
   if (attendeeSnapshot.empty) {
     console.error("Could not find attendee associated with check in");

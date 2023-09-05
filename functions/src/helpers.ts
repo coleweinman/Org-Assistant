@@ -1,9 +1,8 @@
-import { firestore } from "firebase-admin";
+import { DocumentReference, FieldPath, FieldValue, Firestore, Transaction } from "firebase-admin/firestore";
 import { getEventDoc } from "./firestoreHelpers";
 import { Attendee, UpdateData } from "./types";
-import { FieldPath, FieldValue } from "firebase-admin/lib/firestore";
 
-export async function getSeasonId(t: firestore.Transaction, db: firestore.Firestore, orgId: string, eventId: string) {
+export async function getSeasonId(t: Transaction, db: Firestore, orgId: string, eventId: string) {
   // Get event
   const eventDoc = await t.get(getEventDoc(db, orgId, eventId));
   const event = eventDoc?.data();
@@ -111,7 +110,7 @@ export function getEventRemoveUpdates(rsvp: boolean, checkIn: boolean, isNewAtte
   return [...rsvpUpdates, ...checkInUpdates];
 }
 
-export function setUpdates(t: firestore.Transaction, ref: firestore.DocumentReference, updates: UpdateData) {
+export function setUpdates(t: Transaction, ref: DocumentReference, updates: UpdateData) {
   if (updates.length < 2) {
     return;
   }
