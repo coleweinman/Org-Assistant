@@ -15,6 +15,7 @@ import type {
   FormState,
   FormValue,
   HeaderTransform,
+  LinkedEvent,
   MultiOptionsFieldType,
   OrgEvent,
   ReverseDataTransform,
@@ -118,6 +119,7 @@ export function convertInitialToFormData<T extends FormDataType>(
         initial[id] as Timestamp
       ).toDate());
     } else {
+      // @ts-ignore
       formData[id] = initial[id];
     }
   }
@@ -189,7 +191,10 @@ export function isValidDate(date: Dayjs) {
 
 export function getOrgEventFromFormState(
   seasonId: string,
-  state: FormState<OrgEvent>,
+  state: FormState<Omit<OrgEvent, "linkedEvents">>,
+  linkedEvents: LinkedEvent[] = [],
+  newRsvpCount: number = 0,
+  rsvpCount: number = 0,
   newAttendeeCount: number = 0,
   attendeeCount: number = 0,
 ): OrgEvent {
@@ -207,8 +212,11 @@ export function getOrgEventFromFormState(
     ).valueOf()),
     modality: state.modality ?? Modality.IN_PERSON,
     virtualEventUrl: state.virtualEventUrl ?? "",
+    newRsvpCount,
+    rsvpCount,
     newAttendeeCount,
     attendeeCount,
+    linkedEvents,
   } as OrgEvent;
 }
 
@@ -299,7 +307,7 @@ export function getColumnDef<T extends FormDataType>(columns: ColumnData<T>[]): 
 }
 
 export function getDisplayValue<T extends FormDataType>(
-  value: string | string[] | Timestamp,
+  value: string | string[] | Timestamp | T[keyof T],
   field: FormFieldType<T>,
 ): string {
   switch (field.inputType) {

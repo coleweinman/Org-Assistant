@@ -6,11 +6,12 @@ import { Firestore, Timestamp } from "firebase/firestore";
 import {
   CHECK_IN_COLUMNS,
   CHECK_IN_FIELDS,
+  LINKED_CHECK_IN_COLUMNS,
   REVERSE_CHECK_IN_HEADER_TRANSFORM,
   REVERSE_CHECK_IN_TRANSFORM,
 } from "./dynamicConstants";
 import { getLabelFromId } from "./staticHelpers";
-import type { CheckIn, SingleOptionsFieldType, YearGroup } from "./types";
+import type { CheckIn, ColumnData, FormDataType, LinkedCheckIn, SingleOptionsFieldType, YearGroup } from "./types";
 import { InputType, TableType } from "./enums";
 import { parse } from "papaparse";
 import { importCheckIns } from "./managers";
@@ -19,18 +20,22 @@ import { importCheckIns } from "./managers";
 // Table helpers //
 ///////////////////
 
-export function getCheckInsCsv(checkIns: CheckIn[]) {
-  const clipboardRows: string[] = [CHECK_IN_COLUMNS.map(({ label }) => label).join("\t")];
-  for (const checkIn of checkIns) {
-    clipboardRows.push(CHECK_IN_COLUMNS.map(({ id, getDisplayValue, type }) => type === TableType.DATE
-      ? getDisplayValue(checkIn[id])
-      : checkIn[id]).join("\t"));
+export function getCsv<T extends FormDataType>(data: T[], columns: ColumnData<T>[]) {
+  const clipboardRows: string[] = [columns.map(({ label }) => label).join("\t")];
+  for (const row of data) {
+    clipboardRows.push(columns.map(({ id, getDisplayValue, type }) => type === TableType.DATE
+      ? getDisplayValue(row[id])
+      : row[id]).join("\t"));
   }
   return clipboardRows.join("\n");
 }
 
 export async function copyCheckIns(checkIns: CheckIn[]) {
-  await navigator.clipboard.writeText(getCheckInsCsv(checkIns));
+  await navigator.clipboard.writeText(getCsv(checkIns, CHECK_IN_COLUMNS));
+}
+
+export async function copyLinkedCheckIns(checkIns: LinkedCheckIn[]) {
+  await navigator.clipboard.writeText(getCsv(checkIns, LINKED_CHECK_IN_COLUMNS));
 }
 
 export function getCheckInsFromCsv(

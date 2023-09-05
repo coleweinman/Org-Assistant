@@ -28,7 +28,7 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
     getOrg(db, orgId!, onOrgUpdate)
   ), [db, orgId, eventId]);
 
-  const onFormSubmit = async (data: FormState<OrgEvent>) => {
+  const onFormSubmit = async (data: FormState<Omit<OrgEvent, "linkedEvents">>) => {
     const event = getOrgEventFromFormState(org!.currentSeasonId, data);
     const success = await addEvent(db, orgId!, event);
     if (success) {
