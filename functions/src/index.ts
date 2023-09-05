@@ -1,8 +1,8 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-import { orgConverter } from "./converters";
+import { FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
+import { eventConverter, orgConverter } from "./converters";
 import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
 import {
   getAttendeeAddUpdates,
@@ -13,7 +13,7 @@ import {
   getWasNewAttendee,
   setUpdates,
 } from "./helpers";
-import type { CheckIn, Org, PublicOrgEvent } from "./types";
+import type { CheckIn, Org, OrgEvent, PublicOrgEvent, UpdateData } from "./types";
 
 initializeApp();
 const db = getFirestore();
@@ -57,6 +57,105 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
     return { name, imageUrl, description, location, startTime, endTime, modality, virtualEventUrl };
   });
   response.json({ status: "success", data: { events } });
+});
+
+export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const oldEvent = data.before.data() as OrgEvent;
+  const { eventId } = params;
+  const {
+    name,
+    startTime,
+    endTime,
+    location,
+    modality,
+    virtualEventUrl,
+    linkedEvents,
+  } = data.before.data() as OrgEvent;
+  if (!linkedEvents || linkedEvents.length === 0) {
+    return;
+  }
+  await db.runTransaction(async (t) => {
+    const updates: UpdateData = [];
+    if (!startTime.isEqual(oldEvent.startTime)) {
+      updates.push(new FieldPath("startTime"));
+      updates.push(startTime);
+    }
+    if (!endTime.isEqual(oldEvent.endTime)) {
+      updates.push(new FieldPath("endTime"));
+      updates.push(endTime);
+    }
+    if (location !== oldEvent.location) {
+      updates.push(new FieldPath("location"));
+      updates.push(location ?? FieldValue.delete());
+    }
+    if (modality !== oldEvent.modality) {
+      updates.push(new FieldPath("modality"));
+      updates.push(modality);
+    }
+    if (virtualEventUrl !== oldEvent.virtualEventUrl) {
+      updates.push(new FieldPath("virtualEventUrl"));
+      updates.push(virtualEventUrl ?? FieldValue.delete());
+    }
+    for (const { org, event } of linkedEvents) {
+      const eventDoc = db.collection("orgs")
+        .doc(org.id)
+        .collection("events")
+        .doc(event.id)
+        .withConverter<OrgEvent>(eventConverter);
+      if (name !== oldEvent.name) {
+        const orgEvent = (
+          await t.get(eventDoc)
+        ).data();
+        if (orgEvent) {
+          const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
+          updates.push(new FieldPath("linkedEvents"));
+          updates.push(FieldValue.arrayRemove(linkedEvent));
+          updates.push(FieldValue.arrayUnion({
+            ...linkedEvent, event: {
+              id: eventId,
+              name,
+            },
+          }));
+        }
+      }
+      setUpdates(t, eventDoc, updates);
+    }
+  });
+});
+
+export const removeLinkedEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+
+  const { linkedEvents } = data.data() as OrgEvent;
+  const { eventId } = params;
+  if (!linkedEvents) {
+    return;
+  }
+  await db.runTransaction(async (t) => {
+    for (const { org, event } of linkedEvents) {
+      const eventDoc = db.collection("orgs")
+        .doc(org.id)
+        .collection("events")
+        .doc(event.id)
+        .withConverter<OrgEvent>(eventConverter);
+      const orgEvent = (
+        await t.get(eventDoc)
+      ).data();
+      if (orgEvent) {
+        const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
+        t.update(eventDoc, {
+          linkedEvents: FieldValue.arrayRemove(linkedEvent),
+        });
+      }
+    }
+  });
 });
 
 export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {

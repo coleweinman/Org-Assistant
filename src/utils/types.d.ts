@@ -12,9 +12,9 @@ declare module "@tanstack/table-core" {
   }
 }
 
-export type FormDataType = FormDataType;
+export type FormDataType = Record<string, string | string[] | Timestamp | number | null | boolean>;
 export type FormValue<T extends FormDataType> = FormFieldWithValue<T>["value"];
-export type FormState<T extends FormDataType> = Partial<Record<keyof T, FormValue<T>>>
+export type FormState<T extends FormDataType> = Partial<Record<keyof T, FormValue<T>>>;
 
 export type FormOption = {
   id: string,
@@ -121,6 +121,15 @@ export type CheckIn = {
   eventId: string,
 };
 
+export type LinkedCheckIn = CheckIn & {
+  orgName: string,
+};
+
+export type LinkedEvent = {
+  org: Pick<Org, "id" | "name">,
+  event: Pick<OrgEventWithId, "id" | "name">,
+};
+
 export type OrgEvent = {
   name: string,
   seasonId: string,
@@ -135,6 +144,7 @@ export type OrgEvent = {
   newRsvpCount: number,
   newAttendeeCount: number,
   attendeeCount: number,
+  linkedEvents: LinkedEvent[],
 };
 
 export type OrgEventWithId = OrgEvent & {

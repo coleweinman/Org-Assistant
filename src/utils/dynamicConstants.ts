@@ -6,6 +6,7 @@ import type {
   ColumnData,
   Filter,
   FormFieldType,
+  LinkedCheckIn,
   NavLink,
   OrgEvent,
   OrgEventWithId,
@@ -95,7 +96,7 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
-export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
+export const CREATE_EVENT_FIELDS: FormFieldType<Omit<OrgEvent, "linkedEvents">>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
   { id: "description", label: "Description", required: false, inputType: InputType.TEXT },
@@ -125,16 +126,43 @@ export const CREATE_EVENT_FIELDS: FormFieldType<OrgEvent>[] = [
   },
 ];
 
-export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEvent>[] = [
-  { id: "new", label: "New", getDisplayValue: ({ newAttendeeCount }: OrgEvent) => newAttendeeCount.toString() },
+export const EVENT_STATISTICS_CATEGORIES: CategoryData<Omit<OrgEvent, "linkedEvents">>[] = [
   {
-    id: "returning",
-    label: "Returning",
-    getDisplayValue: ({ attendeeCount, newAttendeeCount }: OrgEvent) => (
+    id: "newRsvps",
+    label: "New RSVPs",
+    getDisplayValue: ({ newRsvpCount }: Omit<OrgEvent, "linkedEvents">) => newRsvpCount.toString(),
+  },
+  {
+    id: "returningRsvps",
+    label: "Returning RSVPs",
+    getDisplayValue: ({ rsvpCount, newRsvpCount }: Omit<OrgEvent, "linkedEvents">) => (
+      rsvpCount - newRsvpCount
+    ).toString(),
+  },
+  {
+    id: "newAttendees",
+    label: "New Attendees",
+    getDisplayValue: ({ newAttendeeCount }: Omit<OrgEvent, "linkedEvents">) => newAttendeeCount.toString(),
+  },
+  {
+    id: "returningAttendees",
+    label: "Returning Attendees",
+    getDisplayValue: ({ attendeeCount, newAttendeeCount }: Omit<OrgEvent, "linkedEvents">) => (
       attendeeCount - newAttendeeCount
     ).toString(),
   },
-  { id: "total", label: "Total Attendees", getDisplayValue: ({ attendeeCount }: OrgEvent) => attendeeCount.toString() },
+  {
+    id: "total",
+    label: "Total Attendees",
+    getDisplayValue: ({ attendeeCount }: Omit<OrgEvent, "linkedEvents">) => attendeeCount.toString(),
+  },
+  {
+    id: "yield",
+    label: "RSVP Yield",
+    getDisplayValue: ({ attendeeCount, rsvpCount }: Omit<OrgEvent, "linkedEvents">) => rsvpCount === 0 ? "N/A" : (
+      attendeeCount / rsvpCount * 100
+    ).toFixed(1).toString() + "%",
+  },
 ];
 
 export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
@@ -155,6 +183,11 @@ export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
   { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate, type: TableType.DATE },
 ];
 
+export const LINKED_CHECK_IN_COLUMNS: ColumnData<LinkedCheckIn>[] = [
+  ...CHECK_IN_COLUMNS,
+  { id: "orgName", label: "Org", getDisplayValue: (value: string) => value, type: TableType.TEXT },
+];
+
 export const CHECK_IN_HEADER_TRANSFORM = getHeaderTransform(CHECK_IN_COLUMNS);
 export const REVERSE_CHECK_IN_HEADER_TRANSFORM = getReverseHeaderTransform(CHECK_IN_COLUMNS);
 
@@ -165,7 +198,7 @@ export const CHECK_IN_FILTERS: Filter<CheckIn>[] = [
   { columnId: "didCheckIn", type: FilterType.BOOLEAN },
 ];
 
-export const EVENT_COLUMNS: ColumnData<OrgEventWithId>[] = [
+export const EVENT_COLUMNS: ColumnData<Omit<OrgEventWithId, "linkedEvents">>[] = [
   ...getColumnsFromFields(CREATE_EVENT_FIELDS)
     .filter(({ id }) => ["name", "location", "startTime", "endTime"].includes(id)),
   { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value, type: TableType.NUMBER },

@@ -17,10 +17,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import loading from "../images/loader.svg";
 import { fuzzyFilter } from "../utils/staticHelpers";
-import type { ActionButton, Filter } from "../utils/types";
+import type { ActionButton, Filter, FormDataType } from "../utils/types";
 import "../stylesheets/Table.scss";
 
-type TableProps<T> = {
+type TableProps<T extends FormDataType> = {
   data: T[] | null,
   columns: ColumnDef<T, any>[],
   tableName: string,
@@ -31,7 +31,7 @@ type TableProps<T> = {
   filters?: Filter<T>[],
 }
 
-const Table = <T extends unknown>({
+const Table = <T extends FormDataType>({
   data,
   columns,
   tableName,

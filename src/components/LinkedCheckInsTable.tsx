@@ -3,67 +3,75 @@ import { CSVLink } from "react-csv";
 import Table from "./Table";
 import Toast from "./Toast";
 import { getColumnDef } from "../utils/staticHelpers";
-import { copyCheckIns, getCheckInsFromCsv, getCsv } from "../utils/dynamicHelpers";
-import { CHECK_IN_COLUMNS, CHECK_IN_FILTERS } from "../utils/dynamicConstants";
-import type { CheckIn } from "../utils/types";
+import { copyLinkedCheckIns, getCsv } from "../utils/dynamicHelpers";
+import { CHECK_IN_FILTERS, LINKED_CHECK_IN_COLUMNS } from "../utils/dynamicConstants";
+import type { CheckIn, LinkedCheckIn, LinkedEvent } from "../utils/types";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconType } from "../utils/enums";
 import { Firestore } from "firebase/firestore";
+import { getLinkedCheckIns, getOrgOnce } from "../utils/managers";
 
-type CheckInTableProps = {
+type LinkedCheckInsTableProps = {
   db: Firestore,
   orgId: string,
-  eventId: string,
   eventName: string,
-  checkIns: CheckIn[] | null,
+  existingCheckIns: CheckIn[] | null,
+  linkedEvents: LinkedEvent[],
 };
 
-const columns = getColumnDef(CHECK_IN_COLUMNS);
+const columns = getColumnDef(LINKED_CHECK_IN_COLUMNS);
 
-const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ db, orgId, eventId, eventName, checkIns }) => {
+const LinkedCheckInsTable: React.FunctionComponent<LinkedCheckInsTableProps> = ({
+  db,
+  orgId,
+  eventName,
+  existingCheckIns,
+  linkedEvents,
+}) => {
+  const [orgName, setOrgName] = React.useState<string | null>(null);
+  const [checkIns, setCheckIns] = React.useState<LinkedCheckIn[] | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-  const fileInput = React.useRef<HTMLInputElement>(null);
 
   const copy = async () => {
-    await copyCheckIns(checkIns ?? []);
+    await copyLinkedCheckIns(checkIns ?? []);
     setSuccessMessage("Copied to clipboard!");
   };
 
-  const openFileUpload = () => {
-    if (!fileInput.current) {
-      return;
-    }
-    fileInput.current.click();
-  };
+  React.useEffect(() => {
+    getOrgOnce(db, orgId).then((org) => {
+      if (!org) {
+        return;
+      }
+      setOrgName(org.name);
+    });
+  }, [db, orgId]);
 
-  const onFileUpload: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    if (!e.target.files || e.target.files.length === 0) {
+  React.useEffect(() => {
+    if (!orgName || !existingCheckIns) {
       return;
     }
-    getCheckInsFromCsv(db, orgId, eventId, e.target.files[0], checkIns ?? [], () => {
-      setSuccessMessage("Successfully imported check ins");
-    }, (e) => {console.error(e);});
-  };
+    getLinkedCheckIns(db, linkedEvents).then((linkedCheckIns: LinkedCheckIn[]) => {
+      setCheckIns(linkedCheckIns);
+    });
+  }, [db, linkedEvents, existingCheckIns, orgName]);
 
   return (
     <>
-      <input ref={fileInput} type="file" className="hidden-file-input" accept="text/csv" onChange={onFileUpload} />
       <Table
         data={checkIns}
         initialSorting={[{ id: "timestamp", desc: true }]}
         columns={columns}
         tableName="check-in-table"
-        tableTitle="Check Ins"
+        tableTitle="All Check Ins"
         filters={CHECK_IN_FILTERS}
         actions={[
-          { icon: solid("upload"), onClick: openFileUpload },
           { icon: solid("clipboard"), onClick: copy },
           {
             element: (
               <CSVLink
                 key="csv-link"
-                data={getCsv(checkIns ?? [], CHECK_IN_COLUMNS)}
+                data={getCsv(checkIns ?? [], LINKED_CHECK_IN_COLUMNS)}
                 filename={`${eventName.toLowerCase().replace(" ", "_")}_check_ins.csv`}
                 className="icon-button action-button"
               >
@@ -78,4 +86,4 @@ const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ db, orgId, e
   );
 };
 
-export default CheckInTable;
+export default LinkedCheckInsTable;

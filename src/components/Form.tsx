@@ -38,14 +38,22 @@ const Form = <T extends FormDataType>({
     e.preventDefault();
     const errorMsg = getFormError(fields, formData);
     setError(errorMsg);
-    if (!errorMsg) {
-      try {
-        await onSubmit(formData);
-      } catch (e) {
-        setError((
-          e as Error
-        ).message);
+    if (errorMsg) {
+      return;
+    }
+    try {
+      const submitData = { ...formData };
+      for (const field of fields) {
+        if (submitData[field.id] === undefined) {
+          // Firestore can't handle "undefined," so we use "null" instead
+          submitData[field.id] = null;
+        }
       }
+      await onSubmit(submitData);
+    } catch (e) {
+      setError((
+        e as Error
+      ).message);
     }
   };
 

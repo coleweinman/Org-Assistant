@@ -22,19 +22,23 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db }) => {
   const [events, setEvents] = React.useState<OrgEventWithId[] | null>(null);
   const [attendees, setAttendees] = React.useState<Attendee[] | null>(null);
   const { orgId } = useParams<OrgPageParams>();
-  const onEventsUpdate = (events: OrgEventWithId[]) => setEvents(events);
-  const onAttendeesUpdate = (attendees: Attendee[]) => setAttendees(attendees);
-  const onOrgUpdate = (org: Org | null) => {
-    setOrg(org);
-    if (!seasonId && org) {
-      setSeasonId(org.currentSeasonId);
-    }
-  };
 
   React.useEffect(() => {
-    const unsubOrg = getOrg(db, orgId!, onOrgUpdate);
-    const unsubEvents = seasonId ? getEvents(db, orgId!, seasonId, onEventsUpdate) : () => {};
-    const unsubAttendees = seasonId ? getAttendees(db, orgId!, seasonId, onAttendeesUpdate) : () => {};
+    const unsubOrg = getOrg(db, orgId!, (org: Org | null) => {
+      setOrg(org);
+      if (!seasonId && org) {
+        setSeasonId(org.currentSeasonId);
+      }
+    });
+    const unsubEvents = seasonId
+      ? getEvents(db, orgId!, seasonId, (events: OrgEventWithId[]) => setEvents(events))
+      : () => {};
+    const unsubAttendees = seasonId ? getAttendees(
+      db,
+      orgId!,
+      seasonId,
+      (attendees: Attendee[]) => setAttendees(attendees),
+    ) : () => {};
     return () => {
       unsubEvents();
       unsubAttendees();

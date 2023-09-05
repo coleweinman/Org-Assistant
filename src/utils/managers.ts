@@ -6,6 +6,7 @@ import {
   type DocumentData,
   Firestore,
   type FirestoreDataConverter,
+  getDoc,
   getDocs,
   onSnapshot,
   query,
@@ -14,7 +15,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import type { Attendee, CheckIn, Org, OrgEvent, OrgEventWithId } from "./types";
+import type { Attendee, CheckIn, LinkedCheckIn, LinkedEvent, Org, OrgEvent, OrgEventWithId } from "./types";
 import { CheckInType } from "./enums";
 import { CHECK_IN_TYPE_INFO } from "./dynamicConstants";
 
@@ -46,6 +47,23 @@ const checkInConverter: FirestoreDataConverter<CheckIn> = {
     }
   ),
 };
+
+const linkedCheckInConverter = (orgName: string): FirestoreDataConverter<LinkedCheckIn> => (
+  {
+    toFirestore: () => {
+      throw new Error("Illegal operation");
+    },
+    fromFirestore: (doc: DocumentData) => (
+      {
+        ...(
+          doc.data() as Omit<CheckIn, "id">
+        ),
+        id: doc.id,
+        orgName,
+      }
+    ),
+  }
+);
 
 const eventConverter: FirestoreDataConverter<OrgEvent> = {
   toFirestore: (orgEvent: OrgEvent) => orgEvent as DocumentData,
@@ -106,6 +124,7 @@ export async function submitCheckInOrRsvp(
       },
     );
   } else {
+    console.log(checkIn);
     await addDoc(checkInsCollection, checkIn);
   }
 }
@@ -130,22 +149,6 @@ export function getCheckIns(
   });
 }
 
-export async function importCheckIns(
-  db: Firestore,
-  orgId: string,
-  eventId: string,
-  checkIns: Omit<CheckIn, "id">[],
-  prevCheckIns: CheckIn[],
-) {
-  const batch = writeBatch(db);
-  const checkInsCollection = collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter);
-  checkIns.forEach((checkIn) => {
-    const existing = prevCheckIns.find(({ email }) => email === checkIn.email);
-    batch.set(existing ? doc(checkInsCollection, existing.id) : doc(checkInsCollection), checkIn);
-  });
-  await batch.commit();
-}
-
 export function getAttendeeCheckIns(
   db: Firestore,
   orgId: string,
@@ -164,6 +167,35 @@ export function getAttendeeCheckIns(
     });
     callback(checkIns);
   });
+}
+
+export async function getLinkedCheckIns(db: Firestore, linkedEvents: LinkedEvent[]): Promise<LinkedCheckIn[]> {
+  const checkIns: LinkedCheckIn[] = [];
+  for (const { org, event } of linkedEvents) {
+    const q = query<LinkedCheckIn>(
+      collection(db, "orgs", org.id, "checkIns").withConverter<LinkedCheckIn>(linkedCheckInConverter(org.name)),
+      where("eventId", "==", event.id),
+    );
+    const snapshot = await getDocs<LinkedCheckIn>(q);
+    snapshot.forEach((checkInDoc) => checkIns.push(checkInDoc.data()));
+  }
+  return checkIns;
+}
+
+export async function importCheckIns(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  checkIns: Omit<CheckIn, "id">[],
+  prevCheckIns: CheckIn[],
+) {
+  const batch = writeBatch(db);
+  const checkInsCollection = collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter);
+  checkIns.forEach((checkIn) => {
+    const existing = prevCheckIns.find(({ email }) => email === checkIn.email);
+    batch.set(existing ? doc(checkInsCollection, existing.id) : doc(checkInsCollection), checkIn);
+  });
+  await batch.commit();
 }
 
 export function getEvents(
@@ -192,13 +224,8 @@ export function getEvent(
   secure: boolean,
   callback: (event: OrgEvent | null) => void,
 ) {
-  return onSnapshot(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), (doc) => {
-    if (doc.exists()) {
-      const event = doc.data();
-      callback(event);
-    } else {
-      callback(null);
-    }
+  return onSnapshot(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), async (doc) => {
+    callback(doc.exists() ? doc.data() : null);
   }, (e) => console.error(e));
 }
 
@@ -247,4 +274,9 @@ export function getOrg(db: Firestore, orgId: string, callback: (org: Org | null)
       callback(null);
     }
   }, (e) => console.error(e));
+}
+
+export async function getOrgOnce(db: Firestore, orgId: string) {
+  const orgDoc = await getDoc(doc(db, "orgs", orgId).withConverter<Org>(orgConverter));
+  return orgDoc.data();
 }
