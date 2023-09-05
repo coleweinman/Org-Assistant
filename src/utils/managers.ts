@@ -3,28 +3,48 @@ import {
   collection,
   deleteDoc,
   doc,
-  DocumentData,
+  type DocumentData,
   Firestore,
-  FirestoreDataConverter,
+  type FirestoreDataConverter,
   getDocs,
   onSnapshot,
   query,
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import type { Attendee, CheckIn, Org, OrgEvent, OrgEventWithId } from "./types";
 import { CheckInType } from "./enums";
 import { CHECK_IN_TYPE_INFO } from "./dynamicConstants";
 
-const attendeeConverter: FirestoreDataConverter<Attendee> = {
-  toFirestore: (orgEvent: Attendee) => orgEvent as DocumentData,
-  fromFirestore: (doc: DocumentData) => doc.data() as Attendee,
-};
+const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> => (
+  {
+    toFirestore: () => {
+      throw new Error("Illegal operation");
+    },
+    fromFirestore: (doc: DocumentData) => {
+      const { name, email, seasonAttendance, seasonRsvps } = doc.data();
+      return {
+        name,
+        email,
+        totalEventsAttended: seasonAttendance[seasonId] ?? 0,
+        totalEventsRsvpd: seasonRsvps[seasonId] ?? 0,
+      };
+    },
+  }
+);
 
 const checkInConverter: FirestoreDataConverter<CheckIn> = {
-  toFirestore: (orgEvent: CheckIn) => orgEvent as DocumentData,
-  fromFirestore: (doc: DocumentData) => doc.data() as CheckIn,
+  toFirestore: ({ id, ...checkIn }: CheckIn) => checkIn as DocumentData,
+  fromFirestore: (doc: DocumentData) => (
+    {
+      ...(
+        doc.data() as Omit<CheckIn, "id">
+      ),
+      id: doc.id,
+    }
+  ),
 };
 
 const eventConverter: FirestoreDataConverter<OrgEvent> = {
@@ -33,26 +53,24 @@ const eventConverter: FirestoreDataConverter<OrgEvent> = {
 };
 
 const orgConverter: FirestoreDataConverter<Org> = {
-  toFirestore: (orgEvent: Org) => orgEvent as DocumentData,
-  fromFirestore: (doc: DocumentData) => {
-    const data = doc.data() as Org;
-    data.id = doc.id;
-    return data;
-  },
+  toFirestore: ({ id, ...orgEvent }: Org) => orgEvent as DocumentData,
+  fromFirestore: (doc: DocumentData) => (
+    {
+      ...(
+        doc.data() as Omit<Org, "id">
+      ),
+      id: doc.id,
+    }
+  ),
 };
 
 export function getAttendees(db: Firestore, orgId: string, seasonId: string, callback: (events: Attendee[]) => void) {
   const q = query<Attendee>(
     collection(db, "orgs", orgId, "attendees")
-      .withConverter<Attendee>(attendeeConverter), where("lastActiveSeasonId", "==", seasonId),
+      .withConverter<Attendee>(attendeeConverter(seasonId)), where("lastActiveSeasonId", "==", seasonId),
   );
   return onSnapshot(q, (querySnapshot) => {
-    const events: Attendee[] = [];
-    querySnapshot.forEach((doc) => {
-      const data: Attendee = doc.data();
-      data.id = doc.id;
-      events.push(data);
-    });
+    const events: Attendee[] = querySnapshot.docs.map((doc) => doc.data());
     callback(events);
   });
 }
@@ -110,6 +128,22 @@ export function getCheckIns(
     });
     callback(checkIns);
   });
+}
+
+export async function importCheckIns(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  checkIns: Omit<CheckIn, "id">[],
+  prevCheckIns: CheckIn[],
+) {
+  const batch = writeBatch(db);
+  const checkInsCollection = collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter);
+  checkIns.forEach((checkIn) => {
+    const existing = prevCheckIns.find(({ email }) => email === checkIn.email);
+    batch.set(existing ? doc(checkInsCollection, existing.id) : doc(checkInsCollection), checkIn);
+  });
+  await batch.commit();
 }
 
 export function getAttendeeCheckIns(
@@ -178,6 +212,17 @@ export async function updateEvent(db: Firestore, orgId: string, eventId: string,
 }
 
 export async function deleteEvent(db: Firestore, orgId: string, eventId: string) {
+  const checkInsSnapshot = await getDocs(query(
+    collection(db, "orgs", orgId, "checkIns"),
+    where("eventId", "==", eventId),
+  ));
+  const batch = writeBatch(db);
+  // Delete all associated check ins
+  checkInsSnapshot.forEach((checkIn) => {
+    batch.delete(doc(db, "orgs", orgId, "checkIns", checkIn.id));
+  });
+  await batch.commit();
+  // Commit this after the batch so that firebase function can succeed
   await deleteDoc(doc(db, "orgs", orgId, "events", eventId));
 }
 

@@ -1,16 +1,24 @@
-import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import { onRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { orgConverter } from "./converters";
+import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
+import {
+  getAttendeeAddUpdates,
+  getAttendeeRemoveUpdates,
+  getEventAddUpdates,
+  getEventRemoveUpdates,
+  getSeasonId,
+  getWasNewAttendee,
+  setUpdates,
+} from "./helpers";
+import type { CheckIn, Org, PublicOrgEvent } from "./types";
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
+initializeApp();
+const db = getFirestore();
 
-admin.initializeApp();
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
-const FieldPath = admin.firestore.FieldPath;
-
-exports.getEvents = functions.https.onRequest(async (request, response) => {
+export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, response) => {
   response.set("Access-Control-Allow-Origin", "*");
 
   if (request.method === "OPTIONS") {
@@ -22,99 +30,157 @@ exports.getEvents = functions.https.onRequest(async (request, response) => {
     return;
   }
 
-  const orgId = request.query.orgId;
-  const seasonId = request.query.seasonId;
-  if (orgId === undefined) {
+  const orgId = request.query.orgId as string | undefined;
+  if (!orgId) {
     response
-        .status(400)
-        .json({"status": "error", "message": "Org Id not provided."});
+      .status(400)
+      .json({ "status": "error", "message": "Org Id not provided." });
     return;
   }
-  let q: any = db.collection("orgs").doc(orgId as string).collection("events");
-  if (seasonId !== undefined) {
-    q = q.where("seasonId", "==", seasonId);
+  const orgData = (
+    await db.collection("orgs").doc(orgId as string).withConverter<Org>(orgConverter).get()
+  ).data();
+  if (!orgData) {
+    response
+      .status(400)
+      .json({ "status": "error", "message": "Could not find data associated with org " + orgId });
+    return;
   }
-  const querySnapshot = await q.orderBy("startTime").get();
-  const events = [];
-  for (const doc of querySnapshot.docs) {
-    const event = doc.data();
-    const newEvent = {
-      "name": event.name,
-      "imageUrl": event.imageUrl,
-      "description": event.description,
-      "location": event.location,
-      "startTime": event.startTime,
-      "endTime": event.endTime,
-      "modality": event.modality,
-      "virtualEventUrl": event.virtualEventUrl,
-    };
-    events.push(newEvent);
-  }
-  // functions.logger.info("Hello logs!", { structuredData: true });
-  response.json({"status": "success", "data": {"events": events}});
+  const seasonId = orgData.currentSeasonId;
+  const querySnapshot = await getEventsCollection(db, orgId)
+    .where("seasonId", "==", seasonId)
+    .orderBy("startTime")
+    .get();
+  // Only include relevant data
+  const events: PublicOrgEvent[] = querySnapshot.docs.map((doc) => {
+    const { name, imageUrl, description, location, startTime, endTime, modality, virtualEventUrl } = doc.data();
+    return { name, imageUrl, description, location, startTime, endTime, modality, virtualEventUrl };
+  });
+  response.json({ status: "success", data: { events } });
 });
 
-export const onCreateCheckIn = functions.firestore
-    .document("orgs/{orgId}/checkIns/{checkInId}")
-    .onCreate(async (checkInDoc, context) => {
-      const checkIn = checkInDoc.data();
-      const name: string = checkIn.name;
-      const email: string = checkIn.email;
+export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const { name, email, eventId, didRsvp, didCheckIn } = data.data() as CheckIn;
+  const { orgId } = params;
 
-      // Get event
-      const eventDoc = await db
-          .collection("orgs")
-          .doc(context.params.orgId)
-          .collection("events")
-          .doc(checkIn.eventId)
-          .get();
-      const event = eventDoc.data()!;
-      const eventSeasonId = event.seasonId;
+  if (!didRsvp && !didCheckIn) {
+    console.error("Attendee neither RSVP'd nor checked in. Deleting check in...");
+    await data.ref.delete();
+    return;
+  }
 
-      // Update attendee data or create new attendee doc if new
-      const attendeeCol = db
-          .collection("orgs")
-          .doc(context.params.orgId)
-          .collection("attendees");
-      const attendeeQuery = await attendeeCol
-          .where("email", "==", email.toLowerCase())
-          .get();
-      const updateData = [];
-      let attendeeName = name;
-      const newAttendee = attendeeQuery.empty;
-      let attendeeDocRef;
-      if (newAttendee) {
-        // Add attendee doc
-        attendeeDocRef = await attendeeCol.add({
-          "name": name,
-          "email": email,
-        });
-      } else {
-        attendeeDocRef = attendeeQuery.docs[0].ref;
-        attendeeName = attendeeQuery.docs[0].data().name;
-        // Update name if different than existing
-        if (attendeeName !== checkIn.name) {
-          updateData.push(new FieldPath("name"));
-          updateData.push(name);
-        }
-      }
-      // Update attendance statistics
-      updateData.push(new FieldPath("totalEventsAttended"));
-      updateData.push(FieldValue.increment(1));
-      updateData.push(new FieldPath("seasonAttendance", eventSeasonId));
-      updateData.push(FieldValue.increment(1));
-      updateData.push(new FieldPath("lastActiveSeasonId"));
-      updateData.push(eventSeasonId);
-      await attendeeDocRef.update(
-          updateData[0],
-          updateData[1],
-          ...updateData.slice(2)
-      );
+  await db.runTransaction(async (t) => {
+    // Get event season ID
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
+    }
 
-      // Update event
-      const updateEventData = {
-        "attendeeCount": FieldValue.increment(1),
-        "newAttendeeCount": FieldValue.increment(newAttendee ? 1 : 0),
-      };
-      await eventDoc.ref.update(updateEventData);
-    });
+    // Update attendee data or create new attendee doc if new
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    const isNewAttendee = !attendeeDoc;
+    const attendeeRef = isNewAttendee ? getAttendeesCollection(db, orgId).doc() : attendeeDoc.ref;
+    if (isNewAttendee) {
+      await t.set(attendeeRef, {
+        name: "",
+        email: email.toLowerCase(),
+        // Default values, to be updated below
+        totalEventsAttended: 0,
+        totalEventsRsvpd: 0,
+        lastActiveSeasonId: "",
+        seasonAttendance: {
+          [seasonId]: 0,
+        },
+        seasonRsvps: {
+          [seasonId]: 0,
+        },
+      });
+    }
+
+    setUpdates(t, attendeeRef, getAttendeeAddUpdates(didRsvp, didCheckIn, name, seasonId));
+    setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
+  });
+});
+
+export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const oldCheckIn = data.before.data() as CheckIn;
+  const { name, email, eventId, didRsvp, didCheckIn } = data.after.data() as CheckIn;
+  const { orgId } = params;
+
+  await db.runTransaction(async (t) => {
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
+    }
+
+    // Update attendee data
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    if (!attendeeDoc) {
+      console.error("Could not find attendee associated with check in");
+      return;
+    }
+    const attendee = attendeeDoc.data();
+    const addRsvp = didRsvp && !oldCheckIn.didRsvp;
+    const removeRsvp = !didRsvp && oldCheckIn.didRsvp;
+    const addCheckIn = didCheckIn && !oldCheckIn.didCheckIn;
+    const removeCheckIn = !didCheckIn && oldCheckIn.didCheckIn;
+    const wasNewAttendee = getWasNewAttendee(removeRsvp, removeCheckIn, seasonId, attendee);
+
+    if (!didCheckIn && !didRsvp) {
+      console.log("Attendee neither RSVP'd nor checked in. Deleting check in...");
+      t.delete(data.after.ref);
+      return;
+    }
+
+    const attendeeUpdates = [
+      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, seasonId),
+      ...getAttendeeRemoveUpdates(removeRsvp, removeCheckIn, seasonId, attendee),
+    ];
+    const eventUpdates = [
+      ...getEventAddUpdates(addRsvp, addCheckIn, wasNewAttendee),
+      ...getEventRemoveUpdates(removeRsvp, removeCheckIn, wasNewAttendee),
+    ];
+    setUpdates(t, attendeeDoc.ref, attendeeUpdates);
+    setUpdates(t, getEventDoc(db, orgId, eventId), eventUpdates);
+  });
+});
+
+export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
+  if (!data) {
+    console.error("No data associated with the event");
+    return;
+  }
+  const { email, eventId, didCheckIn, didRsvp } = data.data() as CheckIn;
+  const { orgId } = params;
+
+  await db.runTransaction(async (t) => {
+    const seasonId = await getSeasonId(t, db, orgId, eventId);
+    if (!seasonId) {
+      return;
+    }
+
+    // Update attendee data
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    if (!attendeeDoc) {
+      return;
+    }
+    const attendee = attendeeDoc.data();
+    const wasNewAttendee = getWasNewAttendee(didRsvp, didCheckIn, seasonId, attendee);
+
+    // Delete attendee if they were new, otherwise update attendance stats accordingly
+    if (wasNewAttendee) {
+      t.delete(attendeeDoc.ref);
+    } else {
+      setUpdates(t, attendeeDoc.ref, getAttendeeRemoveUpdates(didRsvp, didCheckIn, seasonId, attendee));
+    }
+    setUpdates(t, getEventDoc(db, orgId, eventId), getEventRemoveUpdates(didRsvp, didCheckIn, wasNewAttendee));
+  });
+});

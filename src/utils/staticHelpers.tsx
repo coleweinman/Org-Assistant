@@ -14,14 +14,17 @@ import type {
   FormOption,
   FormState,
   FormValue,
+  HeaderTransform,
   MultiOptionsFieldType,
   OrgEvent,
+  ReverseDataTransform,
+  ReverseHeaderTransform,
   SingleOptionsFieldType,
   YearGroup,
 } from "./types";
 import { type ColumnDef, createColumnHelper, type DeepKeys, Row } from "@tanstack/react-table";
 import { rankItem } from "@tanstack/match-sorter-utils";
-import { InputType, Modality } from "./enums";
+import { InputType, Modality, TableType } from "./enums";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { FilterMeta } from "@tanstack/table-core/src/types";
 
@@ -36,6 +39,10 @@ export function timestampToDate(timestamp?: Timestamp): string {
   return timestamp
     ? dayjs(timestamp.toMillis()).format(DATE_FORMAT)
     : "";
+}
+
+export function dateStringToTimestamp(dateStr: string): Timestamp {
+  return Timestamp.fromDate(dayjs(dateStr, DATE_FORMAT).toDate());
 }
 
 //////////////////////
@@ -122,16 +129,16 @@ export function getFormError<T extends FormDataType>(fields: FormFieldType<T>[],
     const value = state[field.id];
     if (field.required && !isFieldFilled(field.inputType, value, field)) {
       return "Please fill out all required fields";
-    } else if (!value) {
-      return null;
-    } else if (field.inputType === InputType.EMAIL && !isValidEmail(value as string)) {
-      return "Please enter a valid email address";
-    } else if (field.inputType === InputType.URL && !isValidUrl(value as string)) {
-      return "Please enter a valid URL";
-    } else if (field.inputType === InputType.DATE && !isValidDate(value as Dayjs)) {
-      return "Please enter a date in the future";
-    } else if (field.validate && field.validate(state)) {
-      return field.validate(state);
+    } else if (value) {
+      if (field.inputType === InputType.EMAIL && !isValidEmail(value as string)) {
+        return "Please enter a valid email address";
+      } else if (field.inputType === InputType.URL && !isValidUrl(value as string)) {
+        return "Please enter a valid URL";
+      } else if (field.inputType === InputType.DATE && !isValidDate(value as Dayjs)) {
+        return "Please enter a date in the future";
+      } else if (field.validate && field.validate(state)) {
+        return field.validate(state);
+      }
     }
   }
   return null;
@@ -209,14 +216,72 @@ export function getOrgEventFromFormState(
 // Table helpers //
 ///////////////////
 
+function inputTypeToTableType(inputType: InputType): TableType {
+  switch (inputType) {
+    case InputType.TEXT:
+    case InputType.EMAIL:
+    case InputType.URL:
+    case InputType.RADIO:
+    case InputType.DROPDOWN:
+      return TableType.TEXT;
+    case InputType.CHECKBOX:
+      return TableType.MULTI;
+    case InputType.DATE:
+      return TableType.DATE;
+  }
+}
+
 export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldType<T>[]): ColumnData<T>[] {
   return fields.map((field) => (
     {
       id: field.id,
       label: field.label,
       getDisplayValue: (value: string | string[] | Timestamp) => getDisplayValue(value, field),
+      type: inputTypeToTableType(field.inputType),
     }
   ));
+}
+
+export function getHeaderTransform<T extends FormDataType>(columns: ColumnData<T>[]): HeaderTransform<T> {
+  const transformMap: Record<keyof T, string> = {} as Record<keyof T, string>;
+  for (const { id, label } of columns) {
+    transformMap[id] = label;
+  }
+  return (key: keyof T) => transformMap[key];
+}
+
+export function getReverseHeaderTransform<T extends FormDataType>(columns: ColumnData<T>[]): ReverseHeaderTransform<T> {
+  const transformMap: Record<string, keyof T> = {} as Record<keyof T, string>;
+  for (const { id, label } of columns) {
+    transformMap[label] = id;
+  }
+  return (label: string) => {
+    if (transformMap[label]) {
+      return transformMap[label];
+    }
+    throw new Error("Invalid column " + label);
+  };
+}
+
+export function getReverseDataTransform<T extends FormDataType>(columns: ColumnData<T>[]): ReverseDataTransform<T> {
+  const transformMap: Record<keyof T, TableType> = {} as Record<keyof T, TableType>;
+  for (const { id, type } of columns) {
+    transformMap[id] = type;
+  }
+  return (value: string, key: keyof T) => {
+    switch (transformMap[key]) {
+      case TableType.TEXT:
+        return value;
+      case TableType.NUMBER:
+        return parseInt(value);
+      case TableType.MULTI:
+        return value.split(",").map((s) => s.trim());
+      case TableType.BOOLEAN:
+        return value === "true";
+      case TableType.DATE:
+        return dateStringToTimestamp(value);
+    }
+  };
 }
 
 export function getLabelFromId(value: string, options: FormOption[]): string {
@@ -259,6 +324,10 @@ export function getDisplayValue<T extends FormDataType>(
       );
     case InputType.DATE:
       return timestampToDate(value as Timestamp);
+    case InputType.EMAIL:
+      return (
+        value as string
+      ).toLowerCase();
     default:
       return value as string;
   }

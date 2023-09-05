@@ -26,6 +26,9 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
   const onFormSubmit = async (data: FormState<CheckIn>): Promise<void | never> => {
     const checkIn: CheckIn = {
       ...data,
+      email: (
+        data.email as string
+      ).toLowerCase(),
       didRsvp: type === CheckInType.RSVP,
       didCheckIn: type === CheckInType.CHECK_IN,
       eventId: eventId!,

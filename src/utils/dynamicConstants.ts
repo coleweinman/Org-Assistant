@@ -1,4 +1,4 @@
-import { CheckInType, FilterType, IconType, InputType, Modality } from "./enums";
+import { CheckInType, FilterType, IconType, InputType, Modality, TableType } from "./enums";
 import type {
   Attendee,
   CategoryData,
@@ -10,7 +10,14 @@ import type {
   OrgEvent,
   OrgEventWithId,
 } from "./types";
-import { getBooleanDisplayValue, getColumnsFromFields, timestampToDate } from "./staticHelpers";
+import {
+  getBooleanDisplayValue,
+  getColumnsFromFields,
+  getHeaderTransform,
+  getReverseDataTransform,
+  getReverseHeaderTransform,
+  timestampToDate,
+} from "./staticHelpers";
 import { Dayjs } from "dayjs";
 import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
@@ -131,17 +138,27 @@ export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEvent>[] = [
 ];
 
 export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
-  { id: "name", label: "Name", getDisplayValue: (value: string) => value },
-  { id: "email", label: "Email", getDisplayValue: (value: string) => value },
-  { id: "totalEventsAttended", label: "Events Attended", getDisplayValue: (value: string) => value },
+  { id: "name", label: "Name", getDisplayValue: (value: string) => value, type: TableType.TEXT },
+  { id: "email", label: "Email", getDisplayValue: (value: string) => value, type: TableType.TEXT },
+  {
+    id: "totalEventsAttended",
+    label: "Events Attended",
+    getDisplayValue: (value: string) => value,
+    type: TableType.NUMBER,
+  },
 ];
 
 export const CHECK_IN_COLUMNS: ColumnData<CheckIn>[] = [
   ...getColumnsFromFields(CHECK_IN_FIELDS),
-  { id: "didRsvp", label: "RSVP'd", getDisplayValue: getBooleanDisplayValue },
-  { id: "didCheckIn", label: "Checked In", getDisplayValue: getBooleanDisplayValue },
-  { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate },
+  { id: "didRsvp", label: "RSVP'd", getDisplayValue: getBooleanDisplayValue, type: TableType.BOOLEAN },
+  { id: "didCheckIn", label: "Checked In", getDisplayValue: getBooleanDisplayValue, type: TableType.BOOLEAN },
+  { id: "timestamp", label: "Timestamp", getDisplayValue: timestampToDate, type: TableType.DATE },
 ];
+
+export const CHECK_IN_HEADER_TRANSFORM = getHeaderTransform(CHECK_IN_COLUMNS);
+export const REVERSE_CHECK_IN_HEADER_TRANSFORM = getReverseHeaderTransform(CHECK_IN_COLUMNS);
+
+export const REVERSE_CHECK_IN_TRANSFORM = getReverseDataTransform(CHECK_IN_COLUMNS);
 
 export const CHECK_IN_FILTERS: Filter<CheckIn>[] = [
   { columnId: "didRsvp", type: FilterType.BOOLEAN },
@@ -151,5 +168,5 @@ export const CHECK_IN_FILTERS: Filter<CheckIn>[] = [
 export const EVENT_COLUMNS: ColumnData<OrgEventWithId>[] = [
   ...getColumnsFromFields(CREATE_EVENT_FIELDS)
     .filter(({ id }) => ["name", "location", "startTime", "endTime"].includes(id)),
-  { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value },
+  { id: "attendeeCount", label: "Attendees", getDisplayValue: (value) => value, type: TableType.NUMBER },
 ];

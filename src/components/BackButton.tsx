@@ -3,10 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { useNavigate } from "react-router-dom";
 
-const BackButton: React.FunctionComponent = () => {
+type BackButtonProps = {
+  to: string,
+};
+
+const BackButton: React.FunctionComponent<BackButtonProps> = ({ to }) => {
   const navigate = useNavigate();
   return (
-    <button className="back-button" onClick={() => navigate(-1)}>
+    <button className="back-button" onClick={() => navigate(to)}>
       <FontAwesomeIcon icon={solid("chevron-left")} />
     </button>
   );

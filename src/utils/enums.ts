@@ -8,6 +8,14 @@ export enum InputType {
   DATE = "date",
 }
 
+export enum TableType {
+  TEXT = "text",
+  MULTI = "multi",
+  DATE = "date",
+  BOOLEAN = "boolean",
+  NUMBER = "number",
+}
+
 export enum Modality {
   IN_PERSON = "in_person",
   VIRTUAL = "virtual",
