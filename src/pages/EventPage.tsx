@@ -36,6 +36,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
 
   const { orgId, eventId } = useParams<EventPageParams>();
   const navigate = useNavigate();
+  const isJointEvent = event?.linkedEvents && event.linkedEvents.length > 0;
   const onCheckInsUpdate = (checkIns: CheckIn[]) => setCheckIns(checkIns);
   const onEventUpdate = (event: OrgEvent | null) => setEvent(event);
 
@@ -78,7 +79,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   }, [checkIns]);
 
   React.useEffect(() => {
-    if (!orgId || !checkIns || !event?.linkedEvents) {
+    if (!orgId || !checkIns || !isJointEvent) {
       return;
     }
     getOrgOnce(db, orgId).then((org) => {
@@ -169,7 +170,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
             </>
           )}
         </div>
-        {event.linkedEvents && (
+        {isJointEvent && (
           <div className="section event-settings">
             <div className="column">
               <h2 className="section-title">Linked Events</h2>
@@ -197,7 +198,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
                     <td>{getDisplayValue(event)}</td>
                   </tr>
                 ))}
-                {event.linkedEvents && (
+                {isJointEvent && (
                   <tr key={"linkedAttendees"}>
                     <th>Attendees (w/ Linked):</th>
                     <td>{linkedCheckIns?.length ?? 0}</td>
@@ -209,14 +210,8 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
           <EventChart checkIns={checkInYearGroups} rsvps={rsvpYearGroups} noShows={noShowYearGroups} />
         </div>
         <CheckInTable db={db} orgId={orgId!} eventId={eventId!} eventName={event.name} checkIns={checkIns} />
-        {event.linkedEvents && (
-          <LinkedCheckInsTable
-            db={db}
-            orgId={orgId!}
-            eventName={event.name}
-            existingCheckIns={checkIns}
-            linkedEvents={event.linkedEvents}
-          />
+        {isJointEvent && (
+          <LinkedCheckInsTable eventName={event.name} linkedCheckIns={linkedCheckIns} />
         )}
       </Page>
     );
