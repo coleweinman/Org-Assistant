@@ -373,6 +373,9 @@ export function getCellFill(colors: string[], index: number, total: number): str
   if (total >= colors.length) {
     return colors[index % colors.length];
   }
+  if (total === 1) {
+    return colors[0];
+  }
   return colors[Math.floor((
     index / (
       total - 1
