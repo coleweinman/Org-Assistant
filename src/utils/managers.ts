@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import type { Attendee, CheckIn, LinkedCheckIn, LinkedEvent, Org, OrgEvent, OrgEventWithId } from "./types";
 import { CheckInType } from "./enums";
-import { CHECK_IN_TYPE_INFO } from "./dynamicConstants";
+import { CHECK_IN_REQUIREMENTS, CHECK_IN_TYPE_INFO } from "./dynamicConstants";
 
 const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> => (
   {
@@ -97,34 +97,51 @@ export async function submitCheckInOrRsvp(
   db: Firestore,
   orgId: string,
   eventId: string,
+  { seasonId, checkInRequirements }: OrgEvent,
   checkIn: CheckIn,
   type: CheckInType,
 ): Promise<void | never> {
   const checkInsCollection = collection(db, "orgs", orgId, "checkIns");
-  const q = query<CheckIn>(
+  const existingCheckInQuery = query<CheckIn>(
     checkInsCollection.withConverter<CheckIn>(checkInConverter),
     where("email", "==", checkIn.email),
     where("eventId", "==", eventId),
   );
-  const snapshot = await getDocs(q);
-  if (!snapshot.empty) {
-    const existing = snapshot.docs[0].data();
-    // Do not allow user to re-rsvp or re-check in
-    if ((
-      existing.didRsvp && type === CheckInType.RSVP
-    ) || existing.didCheckIn) {
+  const existingAttendeeQuery = query<Attendee>(
+    collection(db, "orgs", orgId, "attendees").withConverter<Attendee>(attendeeConverter(seasonId)),
+    where("email", "==", checkIn.email),
+  );
+  const [existingCheckInSnapshot, existingAttendeeSnapshot] = await Promise.all([
+    getDocs(existingCheckInQuery),
+    getDocs(existingAttendeeQuery),
+  ]);
+  const existingCheckIn = existingCheckInSnapshot.empty ? null : existingCheckInSnapshot.docs[0].data();
+  const existingAttendee = existingAttendeeSnapshot.empty ? null : existingAttendeeSnapshot.docs[0].data();
+  // Do not allow user to re-rsvp or re-check in
+  if (existingCheckIn) {
+    const reRsvping = existingCheckIn.didRsvp && type === CheckInType.RSVP;
+    const reCheckingIn = existingCheckIn.didCheckIn && type === CheckInType.CHECK_IN;
+    if (reRsvping || reCheckingIn) {
       throw new Error(CHECK_IN_TYPE_INFO[type].errorMessage);
     }
-    await setDoc(
-      snapshot.docs[0].ref,
+  }
+  // Adhere to specified check in requirements
+  if (type === CheckInType.CHECK_IN) {
+    for (const requirement of checkInRequirements ?? []) {
+      if (!CHECK_IN_REQUIREMENTS[requirement].meetsCondition(existingCheckIn, existingAttendee)) {
+        throw new Error(CHECK_IN_REQUIREMENTS[requirement].errorMessage);
+      }
+    }
+  }
+  if (existingCheckIn) {
+    // Replace existing check in
+    await setDoc(existingCheckInSnapshot.docs[0].ref, {
+      ...checkIn,
       // Overwrite didRsvp with true if RSVP exists
-      {
-        ...checkIn,
-        didRsvp: checkIn.didRsvp || existing.didRsvp,
-      },
-    );
+      didRsvp: checkIn.didRsvp || existingCheckIn.didRsvp,
+    });
   } else {
-    console.log(checkIn);
+    // Create new check in
     await addDoc(checkInsCollection, checkIn);
   }
 }

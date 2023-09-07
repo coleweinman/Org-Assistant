@@ -1,4 +1,4 @@
-import { CheckInType, FilterType, IconType, InputType, Modality, TableType } from "./enums";
+import { CheckInRequirement, CheckInType, FilterType, IconType, InputType, Modality, TableType } from "./enums";
 import type {
   Attendee,
   CategoryData,
@@ -8,8 +8,8 @@ import type {
   FormFieldType,
   LinkedCheckIn,
   NavLink,
-  OrgEvent,
   OrgEventWithId,
+  OrgEventWithoutLinked,
 } from "./types";
 import {
   getBooleanDisplayValue,
@@ -61,6 +61,22 @@ export const CHECK_IN_TYPE_INFO: Record<CheckInType, {
   },
 };
 
+export const CHECK_IN_REQUIREMENTS: Record<CheckInRequirement, {
+  meetsCondition: (checkIn: CheckIn | null, attendee: Attendee | null) => boolean,
+  errorMessage: string,
+}> = {
+  [CheckInRequirement.REQUIRE_RSVP]: {
+    meetsCondition: (checkIn: CheckIn | null) => checkIn?.didRsvp ?? false,
+    errorMessage: "This event requires an RSVP beforehand",
+  },
+  [CheckInRequirement.REQUIRE_ACTIVE]: {
+    meetsCondition: (_, attendee: Attendee | null) => (
+      attendee && attendee.totalEventsAttended > 0
+    ) ?? false,
+    errorMessage: "This event requires that you be an active member of the org",
+  },
+};
+
 export const NAVIGATION_LINKS: NavLink[] = [
   { name: "Home", link: "/" },
 ];
@@ -96,7 +112,7 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
-export const CREATE_EVENT_FIELDS: FormFieldType<Omit<OrgEvent, "linkedEvents">>[] = [
+export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
   { id: "description", label: "Description", required: false, inputType: InputType.TEXT },
@@ -126,42 +142,52 @@ export const CREATE_EVENT_FIELDS: FormFieldType<Omit<OrgEvent, "linkedEvents">>[
     inputType: InputType.URL,
     showConditional: ({ modality }) => modality !== Modality.IN_PERSON,
   },
+  {
+    id: "checkInRequirements",
+    label: "Requirements for Check In",
+    required: false,
+    inputType: InputType.CHECKBOX,
+    options: [
+      { id: CheckInRequirement.REQUIRE_RSVP, label: "Require RSVP" },
+      { id: CheckInRequirement.REQUIRE_ACTIVE, label: "Member must be active" },
+    ],
+  },
 ];
 
-export const EVENT_STATISTICS_CATEGORIES: CategoryData<Omit<OrgEvent, "linkedEvents">>[] = [
+export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEventWithoutLinked>[] = [
   {
     id: "newRsvps",
     label: "New RSVPs",
-    getDisplayValue: ({ newRsvpCount }: Omit<OrgEvent, "linkedEvents">) => newRsvpCount.toString(),
+    getDisplayValue: ({ newRsvpCount }: OrgEventWithoutLinked) => newRsvpCount.toString(),
   },
   {
     id: "returningRsvps",
     label: "Returning RSVPs",
-    getDisplayValue: ({ rsvpCount, newRsvpCount }: Omit<OrgEvent, "linkedEvents">) => (
+    getDisplayValue: ({ rsvpCount, newRsvpCount }: OrgEventWithoutLinked) => (
       rsvpCount - newRsvpCount
     ).toString(),
   },
   {
     id: "newAttendees",
     label: "New Attendees",
-    getDisplayValue: ({ newAttendeeCount }: Omit<OrgEvent, "linkedEvents">) => newAttendeeCount.toString(),
+    getDisplayValue: ({ newAttendeeCount }: OrgEventWithoutLinked) => newAttendeeCount.toString(),
   },
   {
     id: "returningAttendees",
     label: "Returning Attendees",
-    getDisplayValue: ({ attendeeCount, newAttendeeCount }: Omit<OrgEvent, "linkedEvents">) => (
+    getDisplayValue: ({ attendeeCount, newAttendeeCount }: OrgEventWithoutLinked) => (
       attendeeCount - newAttendeeCount
     ).toString(),
   },
   {
     id: "total",
     label: "Total Attendees",
-    getDisplayValue: ({ attendeeCount }: Omit<OrgEvent, "linkedEvents">) => attendeeCount.toString(),
+    getDisplayValue: ({ attendeeCount }: OrgEventWithoutLinked) => attendeeCount.toString(),
   },
   {
     id: "yield",
     label: "RSVP Yield",
-    getDisplayValue: ({ attendeeCount, rsvpCount }: Omit<OrgEvent, "linkedEvents">) => rsvpCount === 0 ? "N/A" : (
+    getDisplayValue: ({ attendeeCount, rsvpCount }: OrgEventWithoutLinked) => rsvpCount === 0 ? "N/A" : (
       attendeeCount / rsvpCount * 100
     ).toFixed(1).toString() + "%",
   },

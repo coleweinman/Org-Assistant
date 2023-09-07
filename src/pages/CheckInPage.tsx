@@ -37,7 +37,7 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db }) => {
     for (const { id } of CHECK_IN_FIELDS) {
       window.localStorage.setItem(id, data[id]?.toString() ?? "");
     }
-    await submitCheckInOrRsvp(db, orgId!, eventId!, checkIn, type!);
+    await submitCheckInOrRsvp(db, orgId!, eventId!, event!, checkIn, type!);
     navigate("submitted");
   };
 

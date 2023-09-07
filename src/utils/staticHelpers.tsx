@@ -18,6 +18,7 @@ import type {
   LinkedEvent,
   MultiOptionsFieldType,
   OrgEvent,
+  OrgEventWithoutLinked,
   ReverseDataTransform,
   ReverseHeaderTransform,
   SingleOptionsFieldType,
@@ -191,7 +192,7 @@ export function isValidDate(date: Dayjs) {
 
 export function getOrgEventFromFormState(
   seasonId: string,
-  state: FormState<Omit<OrgEvent, "linkedEvents">>,
+  state: FormState<OrgEventWithoutLinked>,
   linkedEvents: LinkedEvent[] = [],
   newRsvpCount: number = 0,
   rsvpCount: number = 0,
@@ -214,6 +215,7 @@ export function getOrgEventFromFormState(
     ).valueOf()),
     modality: state.modality ?? Modality.IN_PERSON,
     virtualEventUrl: state.virtualEventUrl ?? "",
+    checkInRequirements: state.checkInRequirements ?? [],
     newRsvpCount,
     rsvpCount,
     newAttendeeCount,
@@ -246,7 +248,7 @@ export function getColumnsFromFields<T extends FormDataType>(fields: FormFieldTy
     {
       id: field.id,
       label: field.label,
-      getDisplayValue: (value: string | string[] | Timestamp) => getDisplayValue(value, field),
+      getDisplayValue: (value: T[keyof T]) => getDisplayValue(value, field),
       type: inputTypeToTableType(field.inputType),
     }
   ));
@@ -308,10 +310,35 @@ export function getColumnDef<T extends FormDataType>(columns: ColumnData<T>[]): 
   ));
 }
 
+function isBlank<T extends FormDataType>(value: T[keyof T], inputType: InputType): boolean {
+  if (!value) {
+    return true;
+  }
+  switch (inputType) {
+    // Strings or arrays
+    case InputType.TEXT:
+    case InputType.EMAIL:
+    case InputType.URL:
+    case InputType.RADIO:
+    case InputType.DROPDOWN:
+    case InputType.CHECKBOX:
+      if ((
+        value as string | string[]
+      ).length === 0) {
+        return true;
+      }
+  }
+  return false;
+}
+
 export function getDisplayValue<T extends FormDataType>(
-  value: string | string[] | Timestamp | T[keyof T],
+  value: T[keyof T],
   field: FormFieldType<T>,
 ): string {
+  // Check if value is left blank (return "N/A")
+  if (isBlank(value, field.inputType)) {
+    return "N/A";
+  }
   switch (field.inputType) {
     case InputType.DROPDOWN:
     case InputType.RADIO:

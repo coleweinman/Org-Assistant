@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Form from "../components/Form";
 import { addEvent, getOrg } from "../utils/managers";
 import { CREATE_EVENT_FIELDS } from "../utils/dynamicConstants";
-import type { CreatEventPageParams, FormState, Org, OrgEvent } from "../utils/types";
+import type { CreatEventPageParams, FormState, Org, OrgEventWithoutLinked } from "../utils/types";
 import { getOrgEventFromFormState } from "../utils/staticHelpers";
 import { Helmet } from "react-helmet-async";
 import Page from "../components/Page";
@@ -28,7 +28,7 @@ const CreateEventPage: React.FunctionComponent<CreateEventPageProps> = ({ db }) 
     getOrg(db, orgId!, onOrgUpdate)
   ), [db, orgId, eventId]);
 
-  const onFormSubmit = async (data: FormState<Omit<OrgEvent, "linkedEvents">>) => {
+  const onFormSubmit = async (data: FormState<OrgEventWithoutLinked>) => {
     const event = getOrgEventFromFormState(org!.currentSeasonId, data);
     const success = await addEvent(db, orgId!, event);
     if (success) {
