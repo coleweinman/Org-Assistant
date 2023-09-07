@@ -1,6 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
-import { Firestore, Timestamp } from "firebase/firestore";
+import { Firestore } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { regular, solid } from "@fortawesome/fontawesome-svg-core/import.macro";
@@ -13,7 +13,7 @@ import { deleteEvent, getCheckIns, getEvent, getLinkedCheckIns, getOrgOnce, upda
 import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/dynamicConstants";
 import { getDisplayValue, getOrgEventFromFormState } from "../utils/staticHelpers";
 import { getYearGroups } from "../utils/dynamicHelpers";
-import type { CheckIn, EventPageParams, FormState, OrgEvent, YearGroup } from "../utils/types";
+import type { CheckIn, EventPageParams, FormState, OrgEvent, OrgEventWithoutLinked, YearGroup } from "../utils/types";
 import { LinkedCheckIn } from "../utils/types";
 import "../stylesheets/EventPage.scss";
 import ConfirmButton from "../components/ConfirmButton";
@@ -40,7 +40,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const onCheckInsUpdate = (checkIns: CheckIn[]) => setCheckIns(checkIns);
   const onEventUpdate = (event: OrgEvent | null) => setEvent(event);
 
-  const onEventEdit = async (data: FormState<Omit<OrgEvent, "linkedEvents">>) => {
+  const onEventEdit = async (data: FormState<OrgEventWithoutLinked>) => {
     const editedEvent = getOrgEventFromFormState(
       event!.seasonId,
       data,
@@ -95,7 +95,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         ]);
       });
     });
-  }, [db, orgId, checkIns, event?.linkedEvents]);
+  }, [db, orgId, checkIns, event?.linkedEvents, isJointEvent]);
 
   if (!event) {
     return (
@@ -115,7 +115,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         <h1 className="header">{event.name}</h1>
         <div className={`section event-settings ${editing ? "editing" : ""}`}>
           {editing ? (
-            <>
+            <div className="column">
               <h2 className="section-title">Event Settings</h2>
               <Form
                 className="new-event-form"
@@ -126,7 +126,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
                 onSubmit={onEventEdit}
                 onCancel={() => setEditing(false)}
               />
-            </>
+            </div>
           ) : (
             <>
               <div className="column">
@@ -137,9 +137,10 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
                       <tr key={field.id}>
                         <th>{field.label}:</th>
                         <td>
-                          {event[field.id]
-                            ? getDisplayValue(event[field.id] as string | string[] | Timestamp, field)
-                            : "N/A"}
+                          {getDisplayValue(
+                            event[field.id] as OrgEventWithoutLinked[keyof OrgEventWithoutLinked],
+                            field,
+                          )}
                         </td>
                       </tr>
                     ))}

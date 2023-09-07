@@ -35,3 +35,8 @@ export enum CheckInType {
 export enum FilterType {
   BOOLEAN = "boolean",
 }
+
+export enum CheckInRequirement {
+  REQUIRE_RSVP = "requireRsvp",
+  REQUIRE_ACTIVE = "requireActive",
+}

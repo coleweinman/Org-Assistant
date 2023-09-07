@@ -5,9 +5,11 @@ import type {
   DateFieldWithValue,
   FormDataType,
   FormFieldWithValue,
+  MultiOptionsFieldWithValue,
   SingleOptionsFieldWithValue,
   TextFieldWithValue,
 } from "../utils/types";
+import CheckboxField from "./CheckboxField";
 
 type FormFieldProps<T extends FormDataType> = FormFieldWithValue<T>;
 
@@ -68,6 +70,17 @@ const FormField = <T extends FormDataType>({
           value={value}
           onChange={setValue}
         />
+      );
+    }
+    case InputType.CHECKBOX: {
+      const {
+        label,
+        options,
+        value,
+        setValue,
+      } = formField as Omit<MultiOptionsFieldWithValue<T>, "inputType">;
+      return (
+        <CheckboxField label={label} options={options} value={value} setValue={setValue} />
       );
     }
     default:

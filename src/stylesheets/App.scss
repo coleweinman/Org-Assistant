@@ -176,6 +176,54 @@ form {
       }
     }
   }
+
+  .checkbox-container {
+    .checkbox-row {
+      display: flex;
+      justify-content: flex-start;
+
+      label {
+        font-weight: normal;
+        display: grid;
+        grid-template-columns: 2em auto;
+        gap: 0.5em;
+        align-items: center;
+        cursor: pointer;
+
+        input[type=checkbox] {
+          -webkit-appearance: none;
+          appearance: none;
+          background-color: #fff;
+          margin: 0;
+          font: inherit;
+          color: currentColor;
+          width: 1.15em;
+          height: 1.15em;
+          border: 0.15em solid currentColor;
+          border-radius: 0.15em;
+          transform: translateY(-0.075em);
+          display: grid;
+          place-content: center;
+
+          &::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            box-shadow: inset 1em 1em constants.$button-color;
+          }
+
+          &:checked::before {
+            transform: scale(1);
+          }
+        }
+
+        & + label {
+          margin-top: 1em;
+        }
+      }
+    }
+  }
 }
 
 button {

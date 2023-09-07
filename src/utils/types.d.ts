@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckInType, FilterType, InputType, Modality, TableType } from "./enums";
+import { CheckInRequirement, CheckInType, FilterType, InputType, Modality, TableType } from "./enums";
 import { Timestamp } from "firebase/firestore";
 import { Dayjs } from "dayjs";
 import type { User, UserCredential } from "firebase/auth";
@@ -147,7 +147,10 @@ export type OrgEvent = {
   checkInPageNote: string,
   rsvpPageNote: string,
   linkedEvents: LinkedEvent[],
+  checkInRequirements?: CheckInRequirement[],
 };
+
+export type OrgEventWithoutLinked = Omit<OrgEvent, "linkedEvents">;
 
 export type OrgEventWithId = OrgEvent & {
   id: string;
