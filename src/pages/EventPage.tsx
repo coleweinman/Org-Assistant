@@ -49,6 +49,8 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
       event!.seasonId,
       data,
       event!.linkedEvents,
+      event!.newRsvpCount,
+      event!.rsvpCount,
       event!.newAttendeeCount,
       event!.attendeeCount,
     );
