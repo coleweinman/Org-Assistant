@@ -1,6 +1,7 @@
 import { CheckInRequirement, CheckInType, FilterType, IconType, InputType, Modality, TableType } from "./enums";
 import type {
   Attendee,
+  AttendeeWithData,
   CategoryData,
   CheckIn,
   ColumnData,
@@ -197,10 +198,41 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
   { id: "name", label: "Name", getDisplayValue: (value: string) => value, type: TableType.TEXT },
   { id: "email", label: "Email", getDisplayValue: (value: string) => value, type: TableType.TEXT },
   {
+    id: "totalEventsRsvpd",
+    label: "Events RSVP'd",
+    getDisplayValue: (value: number) => value.toString(),
+    type: TableType.NUMBER,
+  },
+  {
     id: "totalEventsAttended",
     label: "Events Attended",
-    getDisplayValue: (value: string) => value,
+    getDisplayValue: (value: number) => value.toString(),
     type: TableType.NUMBER,
+  },
+];
+
+export const ATTENDEE_SETTINGS_CATEGORIES: CategoryData<AttendeeWithData>[] = [
+  { id: "name", label: "Name", getDisplayValue: ({ name }) => name },
+  { id: "email", label: "Email", getDisplayValue: ({ email }) => email },
+  { id: "schoolId", label: "UT EID", getDisplayValue: ({ schoolId }) => schoolId ?? "N/A" },
+  { id: "discord", label: "Discord", getDisplayValue: ({ discord }) => discord ?? "N/A" },
+];
+
+export const ATTENDEE_STATISTICS_CATEGORIES: CategoryData<AttendeeWithData>[] = [
+  {
+    id: "totalEventsRsvpd",
+    label: "Total Events RSVP'd",
+    getDisplayValue: ({ totalEventsRsvpd }) => totalEventsRsvpd.toString(),
+  },
+  {
+    id: "totalEventsAttended",
+    label: "Total Events Attended",
+    getDisplayValue: ({ totalEventsAttended }) => totalEventsAttended.toString(),
+  },
+  {
+    id: "lastActiveSeason",
+    label: "Last Active Season",
+    getDisplayValue: ({ lastActiveSeasonId }) => lastActiveSeasonId,
   },
 ];
 

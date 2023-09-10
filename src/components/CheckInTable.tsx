@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { CSVLink } from "react-csv";
 import Table from "./Table";
 import Toast from "./Toast";
@@ -24,6 +25,7 @@ const columns = getColumnDef(CHECK_IN_COLUMNS);
 const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ db, orgId, eventId, eventName, checkIns }) => {
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const fileInput = React.useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const copy = async () => {
     await copyCheckIns(checkIns ?? []);
@@ -56,6 +58,7 @@ const CheckInTable: React.FunctionComponent<CheckInTableProps> = ({ db, orgId, e
         tableName="check-in-table"
         tableTitle="Check Ins"
         filters={CHECK_IN_FILTERS}
+        onRowClick={({ email }) => navigate(`/orgs/${orgId}/attendees`, { state: { email } })}
         actions={[
           { icon: solid("upload"), onClick: openFileUpload },
           { icon: solid("clipboard"), onClick: copy },

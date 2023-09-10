@@ -44,7 +44,14 @@ export function getWasNewAttendee(
   return maxPrevEvents === 0;
 }
 
-export function getAttendeeAddUpdates(rsvp: boolean, checkIn: boolean, name: string, seasonId: string): UpdateData {
+export function getAttendeeAddUpdates(
+  rsvp: boolean,
+  checkIn: boolean,
+  name: string,
+  schoolId: string,
+  discord: string,
+  seasonId: string,
+): UpdateData {
   const rsvpUpdates: UpdateData = rsvp ? [
     new FieldPath("totalEventsRsvpd"), FieldValue.increment(1),
     new FieldPath("seasonRsvps", seasonId), FieldValue.increment(1),
@@ -55,6 +62,8 @@ export function getAttendeeAddUpdates(rsvp: boolean, checkIn: boolean, name: str
   ] : [];
   return [
     new FieldPath("name"), name,
+    new FieldPath("schoolId"), schoolId,
+    new FieldPath("discord"), discord,
     new FieldPath("lastActiveSeasonId"), seasonId,
     ...rsvpUpdates,
     ...checkInUpdates,

@@ -102,10 +102,28 @@ export type NavLink = {
 };
 
 export type Attendee = {
+  id: string,
   name: string,
   email: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
+};
+
+export type AttendeeWithData = {
+  id: string,
+  name: string,
+  email: string,
+  schoolId?: string,
+  discord?: string,
+  totalEventsAttended: number,
+  totalEventsRsvpd: number,
+  lastActiveSeasonId: string,
+  seasonAttendance: {
+    [season: string]: number,
+  },
+  seasonRsvps: {
+    [season: string]: number,
+  }
 };
 
 export type CheckIn = {
@@ -179,7 +197,7 @@ export type Filter<T extends FormDataType> = {
   type: FilterType,
 };
 
-export type CategoryData<T extends FormDataType> = {
+export type CategoryData<T extends Record<string, any>> = {
   id: string,
   label: string,
   getDisplayValue: (state: T) => string,
@@ -207,6 +225,11 @@ export type CreatEventPageParams = {
 export type EventPageParams = {
   orgId: string,
   eventId: string,
+};
+
+export type AttendeePageParams = {
+  orgId: string,
+  attendeeId: string,
 };
 
 export type ActionButton = {
