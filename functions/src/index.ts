@@ -163,7 +163,7 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
     console.error("No data associated with the event");
     return;
   }
-  const { name, email, eventId, didRsvp, didCheckIn } = data.data() as CheckIn;
+  const { name, email, schoolId, discord, eventId, didRsvp, didCheckIn } = data.data() as CheckIn;
   const { orgId } = params;
 
   if (!didRsvp && !didCheckIn) {
@@ -187,6 +187,8 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
       await t.set(attendeeRef, {
         name: "",
         email: email.toLowerCase(),
+        schoolId: "",
+        discord: "",
         // Default values, to be updated below
         totalEventsAttended: 0,
         totalEventsRsvpd: 0,
@@ -200,7 +202,7 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
       });
     }
 
-    setUpdates(t, attendeeRef, getAttendeeAddUpdates(didRsvp, didCheckIn, name, seasonId));
+    setUpdates(t, attendeeRef, getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId));
     setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
   });
 });
@@ -211,7 +213,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     return;
   }
   const oldCheckIn = data.before.data() as CheckIn;
-  const { name, email, eventId, didRsvp, didCheckIn } = data.after.data() as CheckIn;
+  const { name, email, schoolId, discord, eventId, didRsvp, didCheckIn } = data.after.data() as CheckIn;
   const { orgId } = params;
 
   await db.runTransaction(async (t) => {
@@ -240,7 +242,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     }
 
     const attendeeUpdates = [
-      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, seasonId),
+      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, schoolId, discord ?? "", seasonId),
       ...getAttendeeRemoveUpdates(removeRsvp, removeCheckIn, seasonId, attendee),
     ];
     const eventUpdates = [

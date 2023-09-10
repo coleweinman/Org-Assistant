@@ -3,23 +3,28 @@ import { Helmet } from "react-helmet-async";
 import { Firestore } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { regular, solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Loading from "../components/Loading";
 import Page from "../components/Page";
 import EventChart from "../components/EventChart";
-import Form from "../components/Form";
 import CheckInTable from "../components/CheckInTable";
-import { deleteEvent, getCheckIns, getEvent, getLinkedCheckIns, getOrgOnce, updateEvent } from "../utils/managers";
-import { CREATE_EVENT_FIELDS, EVENT_STATISTICS_CATEGORIES } from "../utils/dynamicConstants";
-import { getDisplayValue, getOrgEventFromFormState } from "../utils/staticHelpers";
-import { getYearGroups } from "../utils/dynamicHelpers";
-import type { CheckIn, EventPageParams, FormState, OrgEvent, OrgEventWithoutLinked, YearGroup } from "../utils/types";
-import { LinkedCheckIn } from "../utils/types";
-import "../stylesheets/EventPage.scss";
-import ConfirmButton from "../components/ConfirmButton";
 import BackButton from "../components/BackButton";
-import { CheckInType } from "../utils/enums";
 import LinkedCheckInsTable from "../components/LinkedCheckInsTable";
+import { EVENT_STATISTICS_CATEGORIES } from "../utils/dynamicConstants";
+import { deleteEvent, getCheckIns, getEvent, getLinkedCheckIns, getOrgOnce, updateEvent } from "../utils/managers";
+import { getOrgEventFromFormState } from "../utils/staticHelpers";
+import { getYearGroups } from "../utils/dynamicHelpers";
+import type {
+  CheckIn,
+  EventPageParams,
+  FormState,
+  LinkedCheckIn,
+  OrgEvent,
+  OrgEventWithoutLinked,
+  YearGroup,
+} from "../utils/types";
+import "../stylesheets/EventPage.scss";
+import EventDetails from "../components/EventDetails";
 
 type EventPageProps = {
   db: Firestore,
@@ -32,7 +37,6 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   const [rsvpYearGroups, setRsvpYearGroups] = React.useState<YearGroup[]>([]);
   const [noShowYearGroups, setNoShowYearGroups] = React.useState<YearGroup[]>([]);
   const [event, setEvent] = React.useState<OrgEvent | null>(null);
-  const [editing, setEditing] = React.useState<boolean>(false);
 
   const { orgId, eventId } = useParams<EventPageParams>();
   const navigate = useNavigate();
@@ -45,6 +49,8 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
       event!.seasonId,
       data,
       event!.linkedEvents,
+      event!.newRsvpCount,
+      event!.rsvpCount,
       event!.newAttendeeCount,
       event!.attendeeCount,
     );
@@ -53,7 +59,6 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
     } catch (e) {
       console.error(e);
     }
-    setEditing(false);
   };
 
   const onEventDelete = async () => {
@@ -113,64 +118,13 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
         </Helmet>
         <BackButton to={`/orgs/${orgId}`} />
         <h1 className="header">{event.name}</h1>
-        <div className={`section event-settings ${editing ? "editing" : ""}`}>
-          {editing ? (
-            <div className="column">
-              <h2 className="section-title">Event Settings</h2>
-              <Form
-                className="new-event-form"
-                initialData={event}
-                fields={CREATE_EVENT_FIELDS}
-                submitText="Update Event"
-                cancelText="Cancel"
-                onSubmit={onEventEdit}
-                onCancel={() => setEditing(false)}
-              />
-            </div>
-          ) : (
-            <>
-              <div className="column">
-                <h2 className="section-title">Event Settings</h2>
-                <table className="event-data event-details-table">
-                  <tbody>
-                    {CREATE_EVENT_FIELDS.map((field) => (
-                      <tr key={field.id}>
-                        <th>{field.label}:</th>
-                        <td>
-                          {getDisplayValue(
-                            event[field.id] as OrgEventWithoutLinked[keyof OrgEventWithoutLinked],
-                            field,
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="event-action-buttons">
-                <button
-                  className="icon-button"
-                  onClick={() => window.open(`/orgs/${orgId}/${CheckInType.CHECK_IN}/${eventId}`, "_blank")}
-                >
-                  <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={() => window.open(`/orgs/${orgId}/${CheckInType.RSVP}/${eventId}`, "_blank")}
-                >
-                  <FontAwesomeIcon icon={regular("calendar")} />
-                </button>
-                <button className="icon-button" onClick={() => setEditing(true)}>
-                  <FontAwesomeIcon icon={solid("pen")} />
-                </button>
-                <ConfirmButton
-                  icon={solid("trash")}
-                  onClick={onEventDelete}
-                />
-              </div>
-            </>
-          )}
-        </div>
+        <EventDetails
+          orgId={orgId!}
+          eventId={eventId!}
+          event={event!}
+          onEventEdit={onEventEdit}
+          onEventDelete={onEventDelete}
+        />
         {isJointEvent && (
           <div className="section event-settings">
             <div className="column">

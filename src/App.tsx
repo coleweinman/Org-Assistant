@@ -12,6 +12,7 @@ import HomePage from "./pages/HomePage";
 import OrgPage from "./pages/OrgPage";
 import CheckInPage from "./pages/CheckInPage";
 import EventPage from "./pages/EventPage";
+import AttendeePage from "./pages/AttendeePage";
 import SubmitPage from "./pages/SubmitPage";
 import CreateEventPage from "./pages/CreateEventPage";
 import { FIREBASE_CONFIG } from "./utils/dynamicConstants";
@@ -58,6 +59,22 @@ const App: React.FunctionComponent = () => {
               element={
                 <AuthGuard>
                   <EventPage db={db} />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="orgs/:orgId/attendees"
+              element={
+                <AuthGuard>
+                  <AttendeePage db={db} />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="orgs/:orgId/attendees/:attendeeId"
+              element={
+                <AuthGuard>
+                  <AttendeePage db={db} />
                 </AuthGuard>
               }
             />

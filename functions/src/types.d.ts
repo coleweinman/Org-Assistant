@@ -6,6 +6,8 @@ import { FieldPath, FieldValue } from "firebase-admin/lib/firestore";
 export type Attendee = {
   name: string,
   email: string,
+  schoolId: string,
+  discord?: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
   lastActiveSeasonId: string,

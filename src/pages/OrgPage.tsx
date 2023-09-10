@@ -46,7 +46,9 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db }) => {
     };
   }, [orgId, seasonId, db]);
 
-  return !org ? (
+  return !(
+    orgId && seasonId && org
+  ) ? (
     <Loading className="org-page" />
   ) : (
     <Page className="org-page">
@@ -55,9 +57,9 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db }) => {
       </Helmet>
       <BackButton to="/" />
       <h1 className="header">{org.name}</h1>
-      <SeasonSelect seasonId={seasonId!} setSeasonId={setSeasonId} allSeasonIds={org.seasons} />
-      <EventTable events={events} />
-      <AttendeeTable attendees={attendees} />
+      <SeasonSelect seasonId={seasonId} setSeasonId={setSeasonId} allSeasonIds={org.seasons} />
+      <EventTable orgId={orgId} events={events} />
+      <AttendeeTable orgId={orgId} attendees={attendees} />
     </Page>
   );
 };

@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   type DocumentData,
+  documentId,
   Firestore,
   type FirestoreDataConverter,
   getDoc,
@@ -15,7 +16,16 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import type { Attendee, CheckIn, LinkedCheckIn, LinkedEvent, Org, OrgEvent, OrgEventWithId } from "./types";
+import type {
+  Attendee,
+  AttendeeWithData,
+  CheckIn,
+  LinkedCheckIn,
+  LinkedEvent,
+  Org,
+  OrgEvent,
+  OrgEventWithId,
+} from "./types";
 import { CheckInType } from "./enums";
 import { CHECK_IN_REQUIREMENTS, CHECK_IN_TYPE_INFO } from "./dynamicConstants";
 
@@ -27,6 +37,7 @@ const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> =
     fromFirestore: (doc: DocumentData) => {
       const { name, email, seasonAttendance, seasonRsvps } = doc.data();
       return {
+        id: doc.id,
         name,
         email,
         totalEventsAttended: seasonAttendance[seasonId] ?? 0,
@@ -35,6 +46,18 @@ const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> =
     },
   }
 );
+
+const attendeeWithDataConverter: FirestoreDataConverter<AttendeeWithData> = {
+  toFirestore: ({ id, ...attendee }: AttendeeWithData) => attendee as DocumentData,
+  fromFirestore: (doc: DocumentData) => (
+    {
+      ...(
+        doc.data() as Omit<AttendeeWithData, "id">
+      ),
+      id: doc.id,
+    }
+  ),
+};
 
 const checkInConverter: FirestoreDataConverter<CheckIn> = {
   toFirestore: ({ id, ...checkIn }: CheckIn) => checkIn as DocumentData,
@@ -70,8 +93,20 @@ const eventConverter: FirestoreDataConverter<OrgEvent> = {
   fromFirestore: (doc: DocumentData) => doc.data() as OrgEvent,
 };
 
+const eventWithIdConverter: FirestoreDataConverter<OrgEventWithId> = {
+  toFirestore: ({ id, ...orgEvent }: OrgEventWithId) => orgEvent as DocumentData,
+  fromFirestore: (doc: DocumentData) => (
+    {
+      ...(
+        doc.data() as Omit<OrgEventWithId, "id">
+      ),
+      id: doc.id,
+    }
+  ),
+};
+
 const orgConverter: FirestoreDataConverter<Org> = {
-  toFirestore: ({ id, ...orgEvent }: Org) => orgEvent as DocumentData,
+  toFirestore: ({ id, ...org }: Org) => org as DocumentData,
   fromFirestore: (doc: DocumentData) => (
     {
       ...(
@@ -82,7 +117,12 @@ const orgConverter: FirestoreDataConverter<Org> = {
   ),
 };
 
-export function getAttendees(db: Firestore, orgId: string, seasonId: string, callback: (events: Attendee[]) => void) {
+export function getAttendees(
+  db: Firestore,
+  orgId: string,
+  seasonId: string,
+  callback: (attendees: Attendee[]) => void,
+) {
   const q = query<Attendee>(
     collection(db, "orgs", orgId, "attendees")
       .withConverter<Attendee>(attendeeConverter(seasonId)), where("lastActiveSeasonId", "==", seasonId),
@@ -91,6 +131,27 @@ export function getAttendees(db: Firestore, orgId: string, seasonId: string, cal
     const events: Attendee[] = querySnapshot.docs.map((doc) => doc.data());
     callback(events);
   });
+}
+
+export function getAttendee(
+  db: Firestore,
+  orgId: string,
+  attendeeId: string,
+  callback: (attendee: AttendeeWithData | null) => void,
+) {
+  const q = doc(db, "orgs", orgId, "attendees", attendeeId).withConverter<AttendeeWithData>(attendeeWithDataConverter);
+  return onSnapshot(q, (doc) => {
+    callback(doc.exists() ? doc.data() : null);
+  });
+}
+
+export async function getAttendeeId(db: Firestore, orgId: string, email: string): Promise<string | null> {
+  const q = query(collection(db, "orgs", orgId, "attendees"), where("email", "==", email));
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) {
+    return null;
+  }
+  return snapshot.docs[0].id;
 }
 
 export async function submitCheckInOrRsvp(
@@ -166,23 +227,38 @@ export function getCheckIns(
   });
 }
 
-export function getAttendeeCheckIns(
+export function getAttendeeEvents(
   db: Firestore,
   orgId: string,
   email: string,
-  callback: (checkIns: CheckIn[]) => void,
+  callback: (checkIns: OrgEventWithId[]) => void,
 ) {
   const q = query<CheckIn>(
     collection(db, "orgs", orgId, "checkIns").withConverter<CheckIn>(checkInConverter),
     where("email", "==", email),
   );
-  return onSnapshot(q, (querySnapshot) => {
-    const checkIns: CheckIn[] = [];
-    querySnapshot.forEach((doc) => {
-      const data: CheckIn = doc.data();
-      checkIns.push(data);
-    });
-    callback(checkIns);
+  return onSnapshot(q, async (querySnapshot) => {
+    const checkIns = querySnapshot.docs.map((doc) => doc.data());
+    // Split into arrays of 10
+    const eventIdBatches: string[][] = [];
+    for (let i = 0; i < checkIns.length; i++) {
+      if (i % 10 === 0) {
+        eventIdBatches.push([]);
+      }
+      eventIdBatches[eventIdBatches.length - 1].push(checkIns[i].eventId);
+    }
+    // Make separate queries in batches of 10
+    const eventsCollection = collection(db, "orgs", orgId, "events")
+      .withConverter<OrgEventWithId>(eventWithIdConverter);
+    const responseBatches = await Promise.all(eventIdBatches.map((eventIds) => getDocs(query(
+      eventsCollection,
+      where(documentId(), "in", eventIds),
+    )).then((snapshot) => snapshot.docs.map((doc) => doc.data()))));
+    // Join all results into one array and call callback
+    const events: OrgEventWithId[] = (
+      [] as OrgEventWithId[]
+    ).concat(...responseBatches);
+    callback(events);
   });
 }
 
