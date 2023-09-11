@@ -204,6 +204,12 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
   { id: "name", label: "Name", getDisplayValue: (value: string) => value, type: TableType.TEXT },
   { id: "email", label: "Email", getDisplayValue: (value: string) => value, type: TableType.TEXT },
   {
+    id: "schoolId",
+    label: "UT EID",
+    getDisplayValue: (value: string) => value && value.length > 0 ? value : "N/A",
+    type: TableType.TEXT,
+  },
+  {
     id: "totalEventsRsvpd",
     label: "Events RSVP'd",
     getDisplayValue: (value: number) => value.toString(),

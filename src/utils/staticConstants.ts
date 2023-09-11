@@ -1,4 +1,4 @@
-export const TOAST_TIMEOUT = 5000;
+export const TOAST_TIMEOUT = 3000;
 export const TOAST_TRANSITION_TIME = 200;
 
 export const INPUT_DATE_FORMAT = "M/DD h:mma";

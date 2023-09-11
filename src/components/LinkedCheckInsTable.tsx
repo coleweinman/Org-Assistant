@@ -3,7 +3,7 @@ import { CSVLink } from "react-csv";
 import Table from "./Table";
 import Toast from "./Toast";
 import { getColumnDef } from "../utils/staticHelpers";
-import { copyLinkedCheckIns, getCsv } from "../utils/dynamicHelpers";
+import { copyCsv, getCsv } from "../utils/dynamicHelpers";
 import { CHECK_IN_FILTERS, LINKED_CHECK_IN_COLUMNS } from "../utils/dynamicConstants";
 import type { LinkedCheckIn } from "../utils/types";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
@@ -24,7 +24,7 @@ const LinkedCheckInsTable: React.FunctionComponent<LinkedCheckInsTableProps> = (
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   const copy = async () => {
-    await copyLinkedCheckIns(linkedCheckIns ?? []);
+    await copyCsv(linkedCheckIns, LINKED_CHECK_IN_COLUMNS);
     setSuccessMessage("Copied to clipboard!");
   };
 
@@ -43,7 +43,7 @@ const LinkedCheckInsTable: React.FunctionComponent<LinkedCheckInsTableProps> = (
             element: (
               <CSVLink
                 key="csv-link"
-                data={getCsv(linkedCheckIns ?? [], LINKED_CHECK_IN_COLUMNS)}
+                data={getCsv(linkedCheckIns, LINKED_CHECK_IN_COLUMNS)}
                 filename={`${eventName.toLowerCase().replace(" ", "_")}_check_ins.csv`}
                 className="icon-button action-button"
               >

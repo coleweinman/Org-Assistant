@@ -59,7 +59,7 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db }) => {
       <h1 className="header">{org.name}</h1>
       <SeasonSelect seasonId={seasonId} setSeasonId={setSeasonId} allSeasonIds={org.seasons} />
       <EventTable orgId={orgId} events={events} />
-      <AttendeeTable orgId={orgId} attendees={attendees} />
+      <AttendeeTable orgName={org.name} orgId={orgId} attendees={attendees} />
     </Page>
   );
 };

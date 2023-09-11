@@ -305,6 +305,10 @@ button {
   justify-content: space-between;
   cursor: pointer;
 
+  .icon {
+    margin-left: 10px;
+  }
+
   &.success .icon {
     color: constants.$success-color
   }

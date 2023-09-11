@@ -105,6 +105,7 @@ export type Attendee = {
   id: string,
   name: string,
   email: string,
+  schoolId: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
 };
