@@ -11,7 +11,15 @@ import {
   REVERSE_CHECK_IN_TRANSFORM,
 } from "./dynamicConstants";
 import { getLabelFromId } from "./staticHelpers";
-import type { CheckIn, ColumnData, FormDataType, LinkedCheckIn, SingleOptionsFieldType, YearGroup } from "./types";
+import type {
+  CheckIn,
+  ColumnData,
+  FormDataType,
+  FormFieldType,
+  LinkedCheckIn,
+  SingleOptionsFieldType,
+  YearGroup,
+} from "./types";
 import { InputType, TableType } from "./enums";
 import { parse } from "papaparse";
 import { importCheckIns } from "./managers";
@@ -94,10 +102,10 @@ export function getYearGroups(checkIns: CheckIn[] = []): YearGroup[] {
     ));
 }
 
-export function getSavedUserData(): Partial<CheckIn> {
-  const data: Partial<CheckIn> = {};
-  for (const { id, inputType } of CHECK_IN_FIELDS) {
-    const saved = window.localStorage.getItem(id);
+export function getSavedUserData<T extends FormDataType>(fields: FormFieldType<T>[]): Partial<T> {
+  const data: Partial<T> = {};
+  for (const { id, inputType } of fields) {
+    const saved = window.localStorage.getItem(id as string);
     if (saved) {
       // @ts-ignore: Type 'string | Timestamp' is not assignable to type '(string & Timestamp) | undefined'.
       data[id] = inputType === InputType.DATE ? Timestamp.fromDate(new Date(saved)) : saved;

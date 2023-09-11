@@ -3,9 +3,9 @@ import { CREATE_EVENT_FIELDS } from "../utils/dynamicConstants";
 import { getDisplayValue } from "../utils/staticHelpers";
 import { FormState, OrgEvent, OrgEventWithoutLinked } from "../utils/types";
 import { CheckInType } from "../utils/enums";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { regular, solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import ConfirmButton from "./ConfirmButton";
+import IconButton from "./IconButton";
 import Form from "./Form";
 
 type EventDetails = {
@@ -58,22 +58,19 @@ const EventDetails: React.FunctionComponent<EventDetails> = ({ orgId, eventId, e
             </table>
           </div>
           <div className="event-action-buttons">
-            <button
-              className="icon-button"
+            <IconButton
+              label="Open check-in page"
               onClick={() => window.open(`/orgs/${orgId}/${CheckInType.CHECK_IN}/${eventId}`, "_blank")}
-            >
-              <FontAwesomeIcon icon={solid("arrow-up-right-from-square")} />
-            </button>
-            <button
-              className="icon-button"
+              icon={solid("arrow-up-right-from-square")}
+            />
+            <IconButton
+              label="Open RSVP page"
               onClick={() => window.open(`/orgs/${orgId}/${CheckInType.RSVP}/${eventId}`, "_blank")}
-            >
-              <FontAwesomeIcon icon={regular("calendar")} />
-            </button>
-            <button className="icon-button" onClick={() => setEditing(true)}>
-              <FontAwesomeIcon icon={solid("pen")} />
-            </button>
+              icon={regular("calendar")}
+            />
+            <IconButton label="Edit event" onClick={() => setEditing(true)} icon={solid("pen")} />
             <ConfirmButton
+              label="Delete event"
               icon={solid("trash")}
               onClick={onEventDelete}
             />

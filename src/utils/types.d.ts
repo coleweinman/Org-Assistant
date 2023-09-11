@@ -139,6 +139,8 @@ export type CheckIn = {
   eventId: string,
 };
 
+export type JointCheckIn = CheckIn & { org: string };
+
 export type LinkedCheckIn = CheckIn & {
   orgName: string,
 };

@@ -7,6 +7,7 @@ import type {
   ColumnData,
   Filter,
   FormFieldType,
+  FormOption,
   LinkedCheckIn,
   NavLink,
   OrgEventWithId,
@@ -111,6 +112,11 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
     required: false,
     inputType: InputType.TEXT,
   },
+];
+
+export const CHECK_IN_FIELDS_WITH_ORGS = (orgs: FormOption[]): FormFieldType<CheckIn & { orgId: string }>[] => [
+  { id: "orgId", label: "Org", required: true, inputType: InputType.DROPDOWN, options: orgs },
+  ...CHECK_IN_FIELDS,
 ];
 
 export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
