@@ -14,6 +14,7 @@ import {
   setUpdates,
 } from "./helpers";
 import type { CheckIn, Org, OrgEvent, PublicOrgEvent, UpdateData } from "./types";
+import { error, log } from "firebase-functions/logger";
 
 initializeApp();
 const db = getFirestore();
@@ -59,9 +60,56 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
   response.json({ status: "success", data: { events } });
 });
 
+// export const updateAttendees = onRequest(async (request, response) => {
+//   response.set("Access-Control-Allow-Origin", "*");
+//
+//   if (request.method === "OPTIONS") {
+//     // Send response to OPTIONS requests
+//     response.set("Access-Control-Allow-Methods", "GET");
+//     response.set("Access-Control-Allow-Headers", "Content-Type");
+//     response.set("Access-Control-Max-Age", "3600");
+//     response.status(204).send("");
+//     return;
+//   }
+//
+//   const orgId = "xHtVQbaPJrwOFKJ6kJbc";
+//   const attendees = await db.collection("orgs")
+//     .doc(orgId)
+//     .collection("attendees")
+//     .withConverter<Attendee>(attendeeConverter)
+//     .get();
+//   debug(`Found ${attendees.docs.length} attendees`);
+//   const checkIns = (
+//     await db.collection("orgs")
+//       .doc(orgId)
+//       .collection("checkIns")
+//       .withConverter<CheckIn>(checkInConverter)
+//       .where("year", "in", ["2024", "2025", "2026", "2027", "grad"])
+//       .get()
+//   ).docs.map((doc) => doc.data());
+//   const batch = db.batch();
+//   for (const attendeeDoc of attendees.docs) {
+//     const attendee = attendeeDoc.data();
+//     if (attendee.seasonRsvps["Fall 2023"] || attendee.seasonAttendance["Fall 2023"]) {
+//       const matchingCheckIn = checkIns.find(({ email }) => email === attendee.email);
+//       if (matchingCheckIn) {
+//         debug(matchingCheckIn.schoolId, matchingCheckIn.discord);
+//         batch.set(attendeeDoc.ref, {
+//           ...attendee,
+//           schoolId: matchingCheckIn.schoolId,
+//           discord: matchingCheckIn.discord ?? "",
+//         });
+//       }
+//     }
+//   }
+//   debug("Committing batch");
+//   await batch.commit();
+//   response.json({ status: "success" });
+// });
+
 export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
   if (!data) {
-    console.error("No data associated with the event");
+    error("No data associated with the event");
     return;
   }
   const oldEvent = data.before.data() as OrgEvent;
@@ -129,7 +177,7 @@ export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventI
 
 export const removeLinkedEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
   if (!data) {
-    console.error("No data associated with the event");
+    error("No data associated with the event");
     return;
   }
 
@@ -160,14 +208,14 @@ export const removeLinkedEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId
 
 export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
   if (!data) {
-    console.error("No data associated with the event");
+    error("No data associated with the event");
     return;
   }
   const { name, email, schoolId, discord, eventId, didRsvp, didCheckIn } = data.data() as CheckIn;
   const { orgId } = params;
 
   if (!didRsvp && !didCheckIn) {
-    console.error("Attendee neither RSVP'd nor checked in. Deleting check in...");
+    error("Attendee neither RSVP'd nor checked in. Deleting check in...");
     await data.ref.delete();
     return;
   }
@@ -209,7 +257,7 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
 
 export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
   if (!data) {
-    console.error("No data associated with the event");
+    error("No data associated with the event");
     return;
   }
   const oldCheckIn = data.before.data() as CheckIn;
@@ -225,7 +273,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     // Update attendee data
     const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
     if (!attendeeDoc) {
-      console.error("Could not find attendee associated with check in");
+      error("Could not find attendee associated with check in");
       return;
     }
     const attendee = attendeeDoc.data();
@@ -236,7 +284,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     const wasNewAttendee = getWasNewAttendee(removeRsvp, removeCheckIn, seasonId, attendee);
 
     if (!didCheckIn && !didRsvp) {
-      console.log("Attendee neither RSVP'd nor checked in. Deleting check in...");
+      log("Attendee neither RSVP'd nor checked in. Deleting check in...");
       t.delete(data.after.ref);
       return;
     }
@@ -256,7 +304,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
 
 export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
   if (!data) {
-    console.error("No data associated with the event");
+    error("No data associated with the event");
     return;
   }
   const { email, eventId, didCheckIn, didRsvp } = data.data() as CheckIn;

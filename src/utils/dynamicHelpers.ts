@@ -3,15 +3,9 @@
  */
 
 import { Firestore, Timestamp } from "firebase/firestore";
-import {
-  CHECK_IN_COLUMNS,
-  CHECK_IN_FIELDS,
-  LINKED_CHECK_IN_COLUMNS,
-  REVERSE_CHECK_IN_HEADER_TRANSFORM,
-  REVERSE_CHECK_IN_TRANSFORM,
-} from "./dynamicConstants";
+import { CHECK_IN_FIELDS, REVERSE_CHECK_IN_HEADER_TRANSFORM, REVERSE_CHECK_IN_TRANSFORM } from "./dynamicConstants";
 import { getLabelFromId } from "./staticHelpers";
-import type { CheckIn, ColumnData, FormDataType, LinkedCheckIn, SingleOptionsFieldType, YearGroup } from "./types";
+import type { CheckIn, ColumnData, FormDataType, FormFieldType, SingleOptionsFieldType, YearGroup } from "./types";
 import { InputType, TableType } from "./enums";
 import { parse } from "papaparse";
 import { importCheckIns } from "./managers";
@@ -20,9 +14,9 @@ import { importCheckIns } from "./managers";
 // Table helpers //
 ///////////////////
 
-export function getCsv<T extends FormDataType>(data: T[], columns: ColumnData<T>[]) {
+export function getCsv<T extends FormDataType>(data: T[] | null, columns: ColumnData<T>[]) {
   const clipboardRows: string[] = [columns.map(({ label }) => label).join("\t")];
-  for (const row of data) {
+  for (const row of data ?? []) {
     clipboardRows.push(columns.map(({ id, getDisplayValue, type }) => type === TableType.DATE
       ? getDisplayValue(row[id])
       : row[id]).join("\t"));
@@ -30,12 +24,8 @@ export function getCsv<T extends FormDataType>(data: T[], columns: ColumnData<T>
   return clipboardRows.join("\n");
 }
 
-export async function copyCheckIns(checkIns: CheckIn[]) {
-  await navigator.clipboard.writeText(getCsv(checkIns, CHECK_IN_COLUMNS));
-}
-
-export async function copyLinkedCheckIns(checkIns: LinkedCheckIn[]) {
-  await navigator.clipboard.writeText(getCsv(checkIns, LINKED_CHECK_IN_COLUMNS));
+export async function copyCsv<T extends FormDataType>(data: T[] | null, columns: ColumnData<T>[]) {
+  await navigator.clipboard.writeText(getCsv(data, columns));
 }
 
 export function getCheckInsFromCsv(
@@ -94,10 +84,10 @@ export function getYearGroups(checkIns: CheckIn[] = []): YearGroup[] {
     ));
 }
 
-export function getSavedUserData(): Partial<CheckIn> {
-  const data: Partial<CheckIn> = {};
-  for (const { id, inputType } of CHECK_IN_FIELDS) {
-    const saved = window.localStorage.getItem(id);
+export function getSavedUserData<T extends FormDataType>(fields: FormFieldType<T>[]): Partial<T> {
+  const data: Partial<T> = {};
+  for (const { id, inputType } of fields) {
+    const saved = window.localStorage.getItem(id as string);
     if (saved) {
       // @ts-ignore: Type 'string | Timestamp' is not assignable to type '(string & Timestamp) | undefined'.
       data[id] = inputType === InputType.DATE ? Timestamp.fromDate(new Date(saved)) : saved;

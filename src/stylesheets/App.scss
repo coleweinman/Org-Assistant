@@ -119,6 +119,23 @@ button {
   }
 }
 
+.icon-button-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  label {
+    width: fit-content;
+    text-align: right;
+    visibility: hidden;
+    white-space: nowrap;
+  }
+
+  &.hovering label {
+    visibility: visible;
+  }
+}
+
 .icon-button {
   @extend .blue-button;
   height: 50px;
@@ -287,6 +304,10 @@ button {
   display: flex;
   justify-content: space-between;
   cursor: pointer;
+
+  .icon {
+    margin-left: 10px;
+  }
 
   &.success .icon {
     color: constants.$success-color

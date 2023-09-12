@@ -1,32 +1,27 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
+import IconButton from "./IconButton";
 
 type ConfirmButtonProps = {
   onClick: () => void,
   icon: IconDefinition,
+  label: string,
 };
 
-const ConfirmButton: React.FunctionComponent<ConfirmButtonProps> = ({ onClick, icon }) => {
+const ConfirmButton: React.FunctionComponent<ConfirmButtonProps> = ({ onClick, icon, label }) => {
   const [confirming, setConfirming] = React.useState<boolean>(false);
   const onConfirm = () => {
     setConfirming(false);
     onClick();
   };
   return confirming ? (
-    <div className="confirm-buttons">
-      <button className="icon-button" onClick={onConfirm}>
-        <FontAwesomeIcon icon={solid("check")} />
-      </button>
-      <button className="icon-button" onClick={() => setConfirming(false)}>
-        <FontAwesomeIcon icon={solid("xmark")} />
-      </button>
-    </div>
+    <>
+      <IconButton onClick={() => setConfirming(false)} icon={solid("xmark")} label="Cancel" />
+      <IconButton onClick={onConfirm} icon={solid("check")} label="Confirm" />
+    </>
   ) : (
-    <button className="icon-button" onClick={() => setConfirming(true)}>
-      <FontAwesomeIcon icon={icon} />
-    </button>
+    <IconButton onClick={() => setConfirming(true)} icon={icon} label={label} />
   );
 };
 

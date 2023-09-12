@@ -105,6 +105,8 @@ export type Attendee = {
   id: string,
   name: string,
   email: string,
+  schoolId: string,
+  discord?: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
 };
@@ -138,6 +140,8 @@ export type CheckIn = {
   timestamp: Timestamp,
   eventId: string,
 };
+
+export type JointCheckIn = CheckIn & { org: string };
 
 export type LinkedCheckIn = CheckIn & {
   orgName: string,

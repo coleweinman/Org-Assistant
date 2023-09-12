@@ -7,6 +7,7 @@ import type {
   ColumnData,
   Filter,
   FormFieldType,
+  FormOption,
   LinkedCheckIn,
   NavLink,
   OrgEventWithId,
@@ -113,6 +114,11 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
+export const CHECK_IN_FIELDS_WITH_ORGS = (orgs: FormOption[]): FormFieldType<CheckIn & { orgId: string }>[] => [
+  { id: "orgId", label: "Org", required: true, inputType: InputType.DROPDOWN, options: orgs },
+  ...CHECK_IN_FIELDS,
+];
+
 export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
   { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
@@ -197,6 +203,18 @@ export const EVENT_STATISTICS_CATEGORIES: CategoryData<OrgEventWithoutLinked>[] 
 export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
   { id: "name", label: "Name", getDisplayValue: (value: string) => value, type: TableType.TEXT },
   { id: "email", label: "Email", getDisplayValue: (value: string) => value, type: TableType.TEXT },
+  {
+    id: "schoolId",
+    label: "UT EID",
+    getDisplayValue: (value: string) => value && value.length > 0 ? value : "N/A",
+    type: TableType.TEXT,
+  },
+  {
+    id: "discord",
+    label: "Discord Tag",
+    getDisplayValue: (value: string) => value && value.length > 0 ? value : "N/A",
+    type: TableType.TEXT,
+  },
   {
     id: "totalEventsRsvpd",
     label: "Events RSVP'd",

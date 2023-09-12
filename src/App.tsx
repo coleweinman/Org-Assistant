@@ -86,7 +86,8 @@ const App: React.FunctionComponent = () => {
                 </AuthGuard>
               }
             />
-            <Route path="orgs/:orgId/:type/:eventId" element={<CheckInPage db={db} />} />
+            <Route path="orgs/:orgId/:type/:eventId" element={<CheckInPage db={db} joint={false} />} />
+            <Route path="orgs/:orgId/:type/joint/:eventId" element={<CheckInPage db={db} joint={true} />} />
             <Route path="orgs/:orgId/:type/:eventId/submitted" element={<SubmitPage />} />
           </Route>
         </Routes>

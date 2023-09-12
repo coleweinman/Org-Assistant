@@ -2,14 +2,13 @@ import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Firestore } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Loading from "../components/Loading";
 import Page from "../components/Page";
 import EventChart from "../components/EventChart";
 import CheckInTable from "../components/CheckInTable";
 import BackButton from "../components/BackButton";
 import LinkedCheckInsTable from "../components/LinkedCheckInsTable";
+import EventDetails from "../components/EventDetails";
 import { EVENT_STATISTICS_CATEGORIES } from "../utils/dynamicConstants";
 import { deleteEvent, getCheckIns, getEvent, getLinkedCheckIns, getOrgOnce, updateEvent } from "../utils/managers";
 import { getOrgEventFromFormState } from "../utils/staticHelpers";
@@ -24,7 +23,9 @@ import type {
   YearGroup,
 } from "../utils/types";
 import "../stylesheets/EventPage.scss";
-import EventDetails from "../components/EventDetails";
+import IconButton from "../components/IconButton";
+import { CheckInType } from "../utils/enums";
+import { regular, solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
 type EventPageProps = {
   db: Firestore,
@@ -105,9 +106,7 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
   if (!event) {
     return (
       <Loading className="event-page">
-        <button className="back-button" onClick={() => navigate(-1)}>
-          <FontAwesomeIcon icon={solid("chevron-left")} />
-        </button>
+        <BackButton to={`/orgs/${orgId}`} />
       </Loading>
     );
   } else {
@@ -139,6 +138,18 @@ const EventPage: React.FunctionComponent<EventPageProps> = ({ db }) => {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="event-action-buttons">
+              <IconButton
+                label="Open joint check-in page"
+                onClick={() => window.open(`/orgs/${orgId}/${CheckInType.CHECK_IN}/joint/${eventId}`, "_blank")}
+                icon={solid("arrow-up-right-from-square")}
+              />
+              <IconButton
+                label="Open joint RSVP page"
+                onClick={() => window.open(`/orgs/${orgId}/${CheckInType.RSVP}/joint/${eventId}`, "_blank")}
+                icon={regular("calendar")}
+              />
             </div>
           </div>
         )}

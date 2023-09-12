@@ -29,7 +29,7 @@ export enum IconType {
 
 export enum CheckInType {
   RSVP = "rsvp",
-  CHECK_IN = "check-in"
+  CHECK_IN = "check-in",
 }
 
 export enum FilterType {
