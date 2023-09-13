@@ -52,7 +52,8 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
       for (const { id } of checkInFields as FormFieldType<JointCheckIn>[]) {
         window.localStorage.setItem(id, jointCheckIn[id]?.toString() ?? "");
       }
-      await submitCheckInOrRsvp(db, org, eventId!, event!, checkIn, type!);
+      const orgEventId = event?.linkedEvents.find((le) => le.org.id === org)?.event.id;
+      await submitCheckInOrRsvp(db, org, orgEventId!, event!, checkIn, type!);
     } else {
       const checkIn = checkInData as CheckIn;
       for (const { id } of checkInFields as FormFieldType<CheckIn>[]) {
