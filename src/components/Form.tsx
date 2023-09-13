@@ -51,6 +51,7 @@ const Form = <T extends FormDataType>({
       }
       await onSubmit(submitData);
     } catch (e) {
+      console.error(e);
       setError((
         e as Error
       ).message);
