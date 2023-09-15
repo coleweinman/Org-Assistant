@@ -13,7 +13,7 @@ import {
   getWasNewAttendee,
   setUpdates,
 } from "./helpers";
-import type { CheckIn, Org, OrgEvent, PublicOrgEvent, UpdateData } from "./types";
+import type { Attendee, CheckIn, Org, OrgEvent, PublicOrgEvent, UpdateData } from "./types";
 import { error, log } from "firebase-functions/logger";
 
 initializeApp();
@@ -216,8 +216,9 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
     const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
     const isNewAttendee = !attendeeDoc;
     const attendeeRef = isNewAttendee ? getAttendeesCollection(db, orgId).doc() : attendeeDoc.ref;
+    let attendee: Attendee;
     if (isNewAttendee) {
-      await t.set(attendeeRef, {
+      attendee = {
         name: "",
         email: email.toLowerCase(),
         schoolId: "",
@@ -232,10 +233,14 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
         seasonRsvps: {
           [seasonId]: 0,
         },
-      });
+      };
+      await t.set(attendeeRef, attendee);
+    } else {
+      attendee = attendeeDoc.data();
     }
 
-    setUpdates(t, attendeeRef, getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId));
+    setUpdates(t, attendeeRef,
+      getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId, attendee));
     setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
   });
 });
@@ -275,7 +280,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     }
 
     const attendeeUpdates = [
-      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, schoolId, discord ?? "", seasonId),
+      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, schoolId, discord ?? "", seasonId, attendee),
       ...getAttendeeRemoveUpdates(removeRsvp, removeCheckIn, seasonId, attendee),
     ];
     const eventUpdates = [
