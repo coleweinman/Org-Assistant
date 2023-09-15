@@ -218,7 +218,9 @@ export type CheckInPageParams = {
 };
 
 export type SubmitPageParams = {
+  orgId: string,
   type: CheckInType,
+  checkInId: string,
 };
 
 export type CreatEventPageParams = {

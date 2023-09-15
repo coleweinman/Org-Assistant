@@ -163,7 +163,7 @@ export async function submitCheckInOrRsvp(
   { seasonId, checkInRequirements }: OrgEvent,
   checkIn: CheckIn,
   type: CheckInType,
-): Promise<void | never> {
+): Promise<string | never> {
   const checkInsCollection = collection(db, "orgs", orgId, "checkIns");
   const existingCheckInQuery = query<CheckIn>(
     checkInsCollection.withConverter<CheckIn>(checkInConverter),
@@ -197,15 +197,19 @@ export async function submitCheckInOrRsvp(
     }
   }
   if (existingCheckIn) {
+    const existingDoc = existingCheckInSnapshot.docs[0];
     // Replace existing check in
-    await setDoc(existingCheckInSnapshot.docs[0].ref, {
+    await setDoc(existingDoc.ref, {
       ...checkIn,
       // Overwrite didRsvp with true if RSVP exists
       didRsvp: checkIn.didRsvp || existingCheckIn.didRsvp,
     });
+    return existingDoc.id;
   } else {
     // Create new check in
-    await addDoc(checkInsCollection, checkIn);
+    return (
+      await addDoc(checkInsCollection, checkIn)
+    ).id;
   }
 }
 
@@ -227,6 +231,16 @@ export function getCheckIns(
     });
     callback(checkIns);
   });
+}
+
+export function getCheckIn(
+  db: Firestore,
+  orgId: string,
+  checkInId: string,
+  callback: (checkIn: CheckIn | null) => void,
+) {
+  const q = doc(db, "orgs", orgId, "checkIns", checkInId).withConverter<CheckIn>(checkInConverter);
+  return onSnapshot(q, (querySnapshot) => callback(querySnapshot.data() ?? null));
 }
 
 export function getAttendeeEvents(

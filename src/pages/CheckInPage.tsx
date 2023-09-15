@@ -46,6 +46,7 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
       eventId: eventId!,
       timestamp: Timestamp.now(),
     };
+    let checkInId: string;
     if (joint) {
       const jointCheckIn = checkInData as JointCheckIn;
       const { org, ...checkIn } = jointCheckIn;
@@ -55,15 +56,15 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
         window.localStorage.setItem(id, jointCheckIn[id]?.toString() ?? "");
       }
       checkIn.eventId = orgEventId;
-      await submitCheckInOrRsvp(db, org, orgEventId!, event!, checkIn, type!);
+      checkInId = await submitCheckInOrRsvp(db, org, orgEventId!, event!, checkIn, type!);
     } else {
       const checkIn = checkInData as CheckIn;
       for (const { id } of checkInFields as FormFieldType<CheckIn>[]) {
         window.localStorage.setItem(id, checkIn[id]?.toString() ?? "");
       }
-      await submitCheckInOrRsvp(db, orgId!, eventId!, event!, checkIn, type!);
+      checkInId = await submitCheckInOrRsvp(db, orgId!, eventId!, event!, checkIn, type!);
     }
-    navigate("submitted");
+    navigate(`/orgs/${orgId}/submitted/${checkInId}`);
   };
 
   const orgs: FormOption[] | null = joint && org && event?.linkedEvents && event.linkedEvents.length > 0
