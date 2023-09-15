@@ -344,6 +344,11 @@ export function getEvent(
   }, (e) => console.error(e));
 }
 
+export async function getEventOnce(db: Firestore, orgId: string, eventId: string) {
+  const eventDoc = await getDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter));
+  return eventDoc.data();
+}
+
 export async function addEvent(db: Firestore, orgId: string, event: Omit<OrgEvent, "id">) {
   const result = await addDoc(collection(db, "orgs", orgId, "events").withConverter<OrgEvent>(eventConverter), event);
   return result.id;
