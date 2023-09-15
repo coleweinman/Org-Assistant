@@ -28,6 +28,7 @@ import type {
 } from "./types";
 import { CheckInType } from "./enums";
 import { CHECK_IN_REQUIREMENTS } from "./dynamicConstants";
+import dayjs from "dayjs";
 
 const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> => (
   {
@@ -160,7 +161,7 @@ export async function submitCheckInOrRsvp(
   db: Firestore,
   orgId: string,
   eventId: string,
-  { seasonId, checkInRequirements }: OrgEvent,
+  { seasonId, checkInRequirements, rsvpCutoff, checkInCutoff }: OrgEvent,
   checkIn: CheckIn,
   type: CheckInType,
 ): Promise<string | never> {
@@ -189,8 +190,12 @@ export async function submitCheckInOrRsvp(
       return existingCheckIn.id;
     }
   }
-  // Adhere to specified check in requirements
-  if (type === CheckInType.CHECK_IN) {
+  if (type === CheckInType.CHECK_IN && checkInCutoff && dayjs().isAfter(checkInCutoff.toDate(), "minute")) {
+    throw new Error("Check in cutoff time has passed");
+  } else if (type === CheckInType.RSVP && rsvpCutoff && dayjs().isAfter(rsvpCutoff.toDate(), "minute")) {
+    throw new Error("RSVP cutoff time has passed");
+  } else if (type === CheckInType.CHECK_IN) {
+    // Adhere to specified check in requirements
     for (const requirement of checkInRequirements ?? []) {
       if (!CHECK_IN_REQUIREMENTS[requirement].meetsCondition(existingCheckIn, existingAttendee)) {
         throw new Error(CHECK_IN_REQUIREMENTS[requirement].errorMessage);

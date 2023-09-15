@@ -190,6 +190,10 @@ export function isValidDate(date: Dayjs) {
   return date.isSameOrAfter(dayjs(), "day");
 }
 
+function dayjsToTimestamp(date: Dayjs): Timestamp {
+  return Timestamp.fromMillis(date.valueOf());
+}
+
 export function getOrgEventFromFormState(
   seasonId: string,
   state: FormState<OrgEventWithoutLinked>,
@@ -207,12 +211,10 @@ export function getOrgEventFromFormState(
     checkInPageNote: state.checkInPageNote ?? "",
     rsvpPageNote: state.rsvpPageNote ?? "",
     location: state.location ?? "",
-    startTime: Timestamp.fromMillis((
-      state.startTime as Dayjs
-    ).valueOf()),
-    endTime: Timestamp.fromMillis((
-      state.endTime as Dayjs
-    ).valueOf()),
+    startTime: dayjsToTimestamp(state.startTime as Dayjs),
+    endTime: dayjsToTimestamp(state.endTime as Dayjs),
+    rsvpCutoff: state.rsvpCutoff ? dayjsToTimestamp(state.rsvpCutoff as Dayjs) : null,
+    checkInCutoff: state.checkInCutoff ? dayjsToTimestamp(state.checkInCutoff as Dayjs) : null,
     modality: state.modality ?? Modality.IN_PERSON,
     virtualEventUrl: state.virtualEventUrl ?? "",
     checkInRequirements: state.checkInRequirements ?? [],

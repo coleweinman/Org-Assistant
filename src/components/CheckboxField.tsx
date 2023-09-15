@@ -21,8 +21,8 @@ const CheckboxField: React.FunctionComponent<CheckboxFieldProps> = ({ label, opt
     <div className="checkbox-container">
       <h3>{label}</h3>
       {options.map(({ id, label: name }) => (
-        <div className="checkbox-row">
-          <label key={id}>
+        <div className="checkbox-row" key={id}>
+          <label>
             <input type="checkbox" checked={value.includes(id)} value={id} onChange={() => toggleCheckbox(id)} />
             {name}
           </label>

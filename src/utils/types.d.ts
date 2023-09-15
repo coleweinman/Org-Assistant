@@ -160,6 +160,8 @@ export type OrgEvent = {
   location?: string,
   startTime: Timestamp,
   endTime: Timestamp,
+  rsvpCutoff?: Timestamp,
+  checkInCutoff?: Timestamp,
   modality: Modality,
   virtualEventUrl?: string,
   rsvpCount: number,

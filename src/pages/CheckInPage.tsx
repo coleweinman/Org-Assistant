@@ -6,7 +6,7 @@ import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Form from "../components/Form";
 import Page from "../components/Page";
 import { getEvent, getOrg, submitCheckInOrRsvp } from "../utils/managers";
-import { CHECK_IN_FIELDS, CHECK_IN_TYPE_INFO } from "../utils/dynamicConstants";
+import { CHECK_IN_FIELDS } from "../utils/dynamicConstants";
 import { getSavedUserData } from "../utils/dynamicHelpers";
 import { CheckInType, InputType } from "../utils/enums";
 import type {
@@ -33,7 +33,7 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
 
   const { orgId, eventId, type } = useParams<CheckInPageParams>();
   const navigate = useNavigate();
-  const title = CHECK_IN_TYPE_INFO[type!].display;
+  const title = type === CheckInType.CHECK_IN ? "Check In" : "RSVP";
 
   const onFormSubmit = async (data: FormState<CheckIn | JointCheckIn>): Promise<void | never> => {
     const checkInData = {
