@@ -1,6 +1,7 @@
 import { DocumentReference, FieldPath, FieldValue, Firestore, Transaction } from "firebase-admin/firestore";
 import { getEventDoc } from "./firestoreHelpers";
 import { Attendee, UpdateData } from "./types";
+import { error } from "firebase-functions/logger";
 
 export async function getSeasonId(t: Transaction, db: Firestore, orgId: string, eventId: string) {
   // Get event
@@ -16,6 +17,10 @@ export async function getSeasonId(t: Transaction, db: Firestore, orgId: string, 
 // A season is expected to have the format "[Fall/Spring] [year]", e.g. "Fall 2023"
 export function decrementSeasonId(seasonId: string, seasonsActive: string[]): string {
   const newSeasons = seasonsActive.filter((season) => season !== seasonId);
+  if (newSeasons.length === 0) {
+    error("Could not decrement season Id");
+    return seasonId;
+  }
   // Find minimum season
   let newLatestSeason = newSeasons[0].split(" ");
   for (let i = 1; i < newSeasons.length; i++) {
