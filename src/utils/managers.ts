@@ -27,7 +27,8 @@ import type {
   OrgEventWithId,
 } from "./types";
 import { CheckInType } from "./enums";
-import { CHECK_IN_REQUIREMENTS, CHECK_IN_TYPE_INFO } from "./dynamicConstants";
+import { CHECK_IN_REQUIREMENTS } from "./dynamicConstants";
+import dayjs from "dayjs";
 
 const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> => (
   {
@@ -160,10 +161,10 @@ export async function submitCheckInOrRsvp(
   db: Firestore,
   orgId: string,
   eventId: string,
-  { seasonId, checkInRequirements }: OrgEvent,
+  { seasonId, checkInRequirements, rsvpCutoff, checkInCutoff }: OrgEvent,
   checkIn: CheckIn,
   type: CheckInType,
-): Promise<void | never> {
+): Promise<string | never> {
   const checkInsCollection = collection(db, "orgs", orgId, "checkIns");
   const existingCheckInQuery = query<CheckIn>(
     checkInsCollection.withConverter<CheckIn>(checkInConverter),
@@ -185,11 +186,16 @@ export async function submitCheckInOrRsvp(
     const reRsvping = existingCheckIn.didRsvp && type === CheckInType.RSVP;
     const reCheckingIn = existingCheckIn.didCheckIn && type === CheckInType.CHECK_IN;
     if (reRsvping || reCheckingIn) {
-      throw new Error(CHECK_IN_TYPE_INFO[type].errorMessage);
+      // Don't re-check in, but let them re-navigate to the submitted page
+      return existingCheckIn.id;
     }
   }
-  // Adhere to specified check in requirements
-  if (type === CheckInType.CHECK_IN) {
+  if (type === CheckInType.CHECK_IN && checkInCutoff && dayjs().isAfter(checkInCutoff.toDate(), "minute")) {
+    throw new Error("Check in cutoff time has passed");
+  } else if (type === CheckInType.RSVP && rsvpCutoff && dayjs().isAfter(rsvpCutoff.toDate(), "minute")) {
+    throw new Error("RSVP cutoff time has passed");
+  } else if (type === CheckInType.CHECK_IN) {
+    // Adhere to specified check in requirements
     for (const requirement of checkInRequirements ?? []) {
       if (!CHECK_IN_REQUIREMENTS[requirement].meetsCondition(existingCheckIn, existingAttendee)) {
         throw new Error(CHECK_IN_REQUIREMENTS[requirement].errorMessage);
@@ -197,15 +203,19 @@ export async function submitCheckInOrRsvp(
     }
   }
   if (existingCheckIn) {
+    const existingDoc = existingCheckInSnapshot.docs[0];
     // Replace existing check in
-    await setDoc(existingCheckInSnapshot.docs[0].ref, {
+    await setDoc(existingDoc.ref, {
       ...checkIn,
       // Overwrite didRsvp with true if RSVP exists
       didRsvp: checkIn.didRsvp || existingCheckIn.didRsvp,
     });
+    return existingDoc.id;
   } else {
     // Create new check in
-    await addDoc(checkInsCollection, checkIn);
+    return (
+      await addDoc(checkInsCollection, checkIn)
+    ).id;
   }
 }
 
@@ -227,6 +237,16 @@ export function getCheckIns(
     });
     callback(checkIns);
   });
+}
+
+export function getCheckIn(
+  db: Firestore,
+  orgId: string,
+  checkInId: string,
+  callback: (checkIn: CheckIn | null) => void,
+) {
+  const q = doc(db, "orgs", orgId, "checkIns", checkInId).withConverter<CheckIn>(checkInConverter);
+  return onSnapshot(q, (querySnapshot) => callback(querySnapshot.data() ?? null));
 }
 
 export function getAttendeeEvents(

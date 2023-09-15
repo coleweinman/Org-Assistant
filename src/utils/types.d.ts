@@ -160,6 +160,8 @@ export type OrgEvent = {
   location?: string,
   startTime: Timestamp,
   endTime: Timestamp,
+  rsvpCutoff?: Timestamp,
+  checkInCutoff?: Timestamp,
   modality: Modality,
   virtualEventUrl?: string,
   rsvpCount: number,
@@ -218,7 +220,9 @@ export type CheckInPageParams = {
 };
 
 export type SubmitPageParams = {
+  orgId: string,
   type: CheckInType,
+  checkInId: string,
 };
 
 export type CreatEventPageParams = {

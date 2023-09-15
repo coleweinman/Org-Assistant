@@ -1,4 +1,4 @@
-import { CheckInRequirement, CheckInType, FilterType, IconType, InputType, Modality, TableType } from "./enums";
+import { CheckInRequirement, FilterType, IconType, InputType, Modality, TableType } from "./enums";
 import type {
   Attendee,
   AttendeeWithData,
@@ -7,7 +7,6 @@ import type {
   ColumnData,
   Filter,
   FormFieldType,
-  FormOption,
   LinkedCheckIn,
   NavLink,
   OrgEventWithId,
@@ -44,23 +43,6 @@ const MODALITY_OPTIONS: { id: Modality, label: string }[] = [
 export const ICON_TYPE_TO_ICON: Record<IconType, IconDefinition> = {
   [IconType.SUCCESS]: solid("check-circle"),
   [IconType.ERROR]: solid("xmark-circle"),
-};
-
-export const CHECK_IN_TYPE_INFO: Record<CheckInType, {
-  display: string,
-  submitMessage: string,
-  errorMessage: string,
-}> = {
-  [CheckInType.RSVP]: {
-    display: "RSVP",
-    submitMessage: "You have successfully RSVP'd!",
-    errorMessage: "You have already RSVP'd for this event",
-  },
-  [CheckInType.CHECK_IN]: {
-    display: "Check In",
-    submitMessage: "You are now checked in!",
-    errorMessage: "You have already checked in",
-  },
 };
 
 export const CHECK_IN_REQUIREMENTS: Record<CheckInRequirement, {
@@ -114,18 +96,9 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
   },
 ];
 
-export const CHECK_IN_FIELDS_WITH_ORGS = (orgs: FormOption[]): FormFieldType<CheckIn & { orgId: string }>[] => [
-  { id: "orgId", label: "Org", required: true, inputType: InputType.DROPDOWN, options: orgs },
-  ...CHECK_IN_FIELDS,
-];
-
 export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
   { id: "name", label: "Event Name", required: true, inputType: InputType.TEXT },
-  { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
-  { id: "description", label: "Description", required: false, inputType: InputType.TEXT },
-  { id: "checkInPageNote", label: "Check In Page Note", required: false, inputType: InputType.TEXT },
-  { id: "rsvpPageNote", label: "RSVP Page Note", required: false, inputType: InputType.TEXT },
-  { id: "location", label: "Location", required: false, inputType: InputType.TEXT },
+  { id: "modality", label: "Modality", required: true, inputType: InputType.DROPDOWN, options: MODALITY_OPTIONS },
   { id: "startTime", label: "Start Time", required: true, inputType: InputType.DATE },
   {
     id: "endTime",
@@ -141,7 +114,9 @@ export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
       ).isAfter(startTime as Dayjs, "minute") ? null : "End time must be after start time";
     },
   },
-  { id: "modality", label: "Modality", required: true, inputType: InputType.DROPDOWN, options: MODALITY_OPTIONS },
+  { id: "rsvpCutoff", label: "RSVP Cutoff", required: false, inputType: InputType.DATE },
+  { id: "checkInCutoff", label: "Check In Cutoff", required: false, inputType: InputType.DATE },
+  { id: "location", label: "Location", required: false, inputType: InputType.TEXT },
   {
     id: "virtualEventUrl",
     label: "Virtual Event URL",
@@ -149,6 +124,10 @@ export const CREATE_EVENT_FIELDS: FormFieldType<OrgEventWithoutLinked>[] = [
     inputType: InputType.URL,
     showConditional: ({ modality }) => modality !== Modality.IN_PERSON,
   },
+  { id: "imageUrl", label: "Image URL", required: false, inputType: InputType.URL },
+  { id: "description", label: "Description", required: false, inputType: InputType.TEXT },
+  { id: "checkInPageNote", label: "Check In Page Note", required: false, inputType: InputType.TEXT },
+  { id: "rsvpPageNote", label: "RSVP Page Note", required: false, inputType: InputType.TEXT },
   {
     id: "checkInRequirements",
     label: "Requirements for Check In",

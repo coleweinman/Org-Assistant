@@ -88,8 +88,7 @@ const App: React.FunctionComponent = () => {
             />
             <Route path="orgs/:orgId/:type/:eventId" element={<CheckInPage db={db} joint={false} />} />
             <Route path="orgs/:orgId/:type/joint/:eventId" element={<CheckInPage db={db} joint={true} />} />
-            <Route path="orgs/:orgId/:type/:eventId/submitted" element={<SubmitPage />} />
-            <Route path="orgs/:orgId/:type/joint/:eventId/submitted" element={<SubmitPage />} />
+            <Route path="orgs/:orgId/submitted/:checkInId" element={<SubmitPage db={db} />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -8,7 +8,7 @@ import ConfirmButton from "./ConfirmButton";
 import IconButton from "./IconButton";
 import Form from "./Form";
 
-type EventDetails = {
+type EventDetailsProps = {
   orgId: string,
   eventId: string,
   event: OrgEvent,
@@ -16,7 +16,13 @@ type EventDetails = {
   onEventDelete: () => Promise<void>,
 };
 
-const EventDetails: React.FunctionComponent<EventDetails> = ({ orgId, eventId, event, onEventEdit, onEventDelete }) => {
+const EventDetails: React.FunctionComponent<EventDetailsProps> = ({
+  orgId,
+  eventId,
+  event,
+  onEventEdit,
+  onEventDelete,
+}) => {
   const [editing, setEditing] = React.useState<boolean>(false);
   const onFormSubmit = async (data: FormState<OrgEventWithoutLinked>) => {
     await onEventEdit(data);

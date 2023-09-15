@@ -6,7 +6,7 @@ import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 import Form from "../components/Form";
 import Page from "../components/Page";
 import { getEvent, getOrg, submitCheckInOrRsvp } from "../utils/managers";
-import { CHECK_IN_FIELDS, CHECK_IN_TYPE_INFO } from "../utils/dynamicConstants";
+import { CHECK_IN_FIELDS } from "../utils/dynamicConstants";
 import { getSavedUserData } from "../utils/dynamicHelpers";
 import { CheckInType, InputType } from "../utils/enums";
 import type {
@@ -33,7 +33,7 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
 
   const { orgId, eventId, type } = useParams<CheckInPageParams>();
   const navigate = useNavigate();
-  const title = CHECK_IN_TYPE_INFO[type!].display;
+  const title = type === CheckInType.CHECK_IN ? "Check In" : "RSVP";
 
   const onFormSubmit = async (data: FormState<CheckIn | JointCheckIn>): Promise<void | never> => {
     const checkInData = {
@@ -46,6 +46,7 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
       eventId: eventId!,
       timestamp: Timestamp.now(),
     };
+    let checkInId: string;
     if (joint) {
       const jointCheckIn = checkInData as JointCheckIn;
       const { org, ...checkIn } = jointCheckIn;
@@ -55,15 +56,15 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
         window.localStorage.setItem(id, jointCheckIn[id]?.toString() ?? "");
       }
       checkIn.eventId = orgEventId;
-      await submitCheckInOrRsvp(db, org, orgEventId!, event!, checkIn, type!);
+      checkInId = await submitCheckInOrRsvp(db, org, orgEventId!, event!, checkIn, type!);
     } else {
       const checkIn = checkInData as CheckIn;
       for (const { id } of checkInFields as FormFieldType<CheckIn>[]) {
         window.localStorage.setItem(id, checkIn[id]?.toString() ?? "");
       }
-      await submitCheckInOrRsvp(db, orgId!, eventId!, event!, checkIn, type!);
+      checkInId = await submitCheckInOrRsvp(db, orgId!, eventId!, event!, checkIn, type!);
     }
-    navigate("submitted");
+    navigate(`/orgs/${orgId}/submitted/${checkInId}`);
   };
 
   const orgs: FormOption[] | null = joint && org && event?.linkedEvents && event.linkedEvents.length > 0
