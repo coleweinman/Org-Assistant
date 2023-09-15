@@ -100,7 +100,10 @@ export function getAttendeeRemoveUpdates(
   ] : [];
   const seasonsActive = [...Object.keys(seasonAttendance), ...Object.keys(seasonRsvps)];
   return [
-    new FieldPath("lastActiveSeasonId"), isNewRsvper && isNewAttendee ?
+    new FieldPath("lastActiveSeasonId"),
+    (
+      rsvp || checkIn
+    ) && isNewRsvper && isNewAttendee ?
       decrementSeasonId(seasonId, seasonsActive) : seasonId,
     ...rsvpUpdates,
     ...checkInUpdates,
