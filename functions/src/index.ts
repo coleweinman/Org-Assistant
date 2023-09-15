@@ -1,7 +1,7 @@
-import { onRequest } from "firebase-functions/v2/https";
+import { onCall, onRequest } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
+import { DocumentReference, FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
 import { eventConverter, orgConverter } from "./converters";
 import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
 import {
@@ -60,52 +60,37 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
   response.json({ status: "success", data: { events } });
 });
 
-// export const updateAttendees = onRequest(async (request, response) => {
-//   response.set("Access-Control-Allow-Origin", "*");
-//
-//   if (request.method === "OPTIONS") {
-//     // Send response to OPTIONS requests
-//     response.set("Access-Control-Allow-Methods", "GET");
-//     response.set("Access-Control-Allow-Headers", "Content-Type");
-//     response.set("Access-Control-Max-Age", "3600");
-//     response.status(204).send("");
-//     return;
-//   }
-//
-//   const orgId = "xHtVQbaPJrwOFKJ6kJbc";
-//   const attendees = await db.collection("orgs")
-//     .doc(orgId)
-//     .collection("attendees")
-//     .withConverter<Attendee>(attendeeConverter)
-//     .get();
-//   debug(`Found ${attendees.docs.length} attendees`);
-//   const checkIns = (
-//     await db.collection("orgs")
-//       .doc(orgId)
-//       .collection("checkIns")
-//       .withConverter<CheckIn>(checkInConverter)
-//       .where("year", "in", ["2024", "2025", "2026", "2027", "grad"])
-//       .get()
-//   ).docs.map((doc) => doc.data());
-//   const batch = db.batch();
-//   for (const attendeeDoc of attendees.docs) {
-//     const attendee = attendeeDoc.data();
-//     if (attendee.seasonRsvps["Fall 2023"] || attendee.seasonAttendance["Fall 2023"]) {
-//       const matchingCheckIn = checkIns.find(({ email }) => email === attendee.email);
-//       if (matchingCheckIn) {
-//         debug(matchingCheckIn.schoolId, matchingCheckIn.discord);
-//         batch.set(attendeeDoc.ref, {
-//           ...attendee,
-//           schoolId: matchingCheckIn.schoolId,
-//           discord: matchingCheckIn.discord ?? "",
-//         });
-//       }
-//     }
-//   }
-//   debug("Committing batch");
-//   await batch.commit();
-//   response.json({ status: "success" });
-// });
+export const linkEvents = onCall<{
+  orgIds: string[],
+  eventRef: DocumentReference<OrgEvent>
+}, Promise<void>>(async (request) => {
+  const { orgIds, eventRef } = request.data;
+  await db.runTransaction(async (t) => {
+    const eventDoc = await t.get(eventRef.withConverter<OrgEvent>(eventConverter));
+    const event = eventDoc.data();
+    if (!event) {
+      return;
+    }
+    const eventDocs = [
+      ...orgIds.map((orgId) => db.collection("orgs").doc(orgId).collection("events").doc()),
+      eventDoc.ref,
+    ];
+    for (let i = 0; i < orgIds.length; i++) {
+      t.set(
+        eventDocs[i],
+        {
+          ...event,
+          rsvpCount: 0,
+          newRsvpCount: 0,
+          newAttendeeCount: 0,
+          attendeeCount: 0,
+          linkedEvents: [...eventDocs.slice(0, i), ...eventDocs.slice(i + 1)],
+        },
+      );
+    }
+    t.update(eventDoc.ref, { linkedEvents: eventDocs.slice(0, eventDocs.length - 1) });
+  });
+});
 
 export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
   if (!data) {
