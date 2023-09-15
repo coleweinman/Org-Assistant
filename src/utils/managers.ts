@@ -27,7 +27,7 @@ import type {
   OrgEventWithId,
 } from "./types";
 import { CheckInType } from "./enums";
-import { CHECK_IN_REQUIREMENTS, CHECK_IN_TYPE_INFO } from "./dynamicConstants";
+import { CHECK_IN_REQUIREMENTS } from "./dynamicConstants";
 
 const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> => (
   {
@@ -185,7 +185,8 @@ export async function submitCheckInOrRsvp(
     const reRsvping = existingCheckIn.didRsvp && type === CheckInType.RSVP;
     const reCheckingIn = existingCheckIn.didCheckIn && type === CheckInType.CHECK_IN;
     if (reRsvping || reCheckingIn) {
-      throw new Error(CHECK_IN_TYPE_INFO[type].errorMessage);
+      // Don't re-check in, but let them re-navigate to the submitted page
+      return existingCheckIn.id;
     }
   }
   // Adhere to specified check in requirements
