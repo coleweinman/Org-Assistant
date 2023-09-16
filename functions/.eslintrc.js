@@ -33,5 +33,6 @@ module.exports = {
       "arraysInObjects": false,
     }],
     "max-len": ["error", {"code": 120}],
+    "operator-linebreak": ["warn", "before"],
   },
 };

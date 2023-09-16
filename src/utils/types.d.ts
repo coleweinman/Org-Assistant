@@ -107,18 +107,12 @@ export type Attendee = {
   email: string,
   schoolId: string,
   discord?: string,
+  year: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
 };
 
-export type AttendeeWithData = {
-  id: string,
-  name: string,
-  email: string,
-  schoolId?: string,
-  discord?: string,
-  totalEventsAttended: number,
-  totalEventsRsvpd: number,
+export type AttendeeWithData = Attendee & {
   lastActiveSeasonId: string,
   seasonAttendance: {
     [season: string]: number,

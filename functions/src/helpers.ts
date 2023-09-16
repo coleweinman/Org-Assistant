@@ -56,7 +56,7 @@ export function getAttendeeAddUpdates(
   schoolId: string,
   discord: string,
   seasonId: string,
-  { lastActiveSeasonId }: Attendee
+  { lastActiveSeasonId }: Attendee,
 ): UpdateData {
   const rsvpUpdates: UpdateData = rsvp ? [
     new FieldPath("totalEventsRsvpd"), FieldValue.increment(1),
@@ -109,10 +109,10 @@ export function getAttendeeRemoveUpdates(
   ] : [];
   const seasonsActive = [...Object.keys(seasonAttendance), ...Object.keys(seasonRsvps)];
   const seasonIdUpdate: UpdateData = (
-      rsvp || checkIn
-    ) && isNewRsvper && isNewAttendee ? [
-    new FieldPath("lastActiveSeasonId"), decrementSeasonId(seasonId, seasonsActive),
-  ] : [];
+    rsvp || checkIn
+  ) && isNewRsvper && isNewAttendee
+    ? [new FieldPath("lastActiveSeasonId"), decrementSeasonId(seasonId, seasonsActive)]
+    : [];
   return [
     ...seasonIdUpdate,
     ...rsvpUpdates,

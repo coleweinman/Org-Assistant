@@ -8,6 +8,7 @@ export type Attendee = {
   email: string,
   schoolId: string,
   discord?: string,
+  year: string,
   totalEventsAttended: number,
   totalEventsRsvpd: number,
   lastActiveSeasonId: string,
