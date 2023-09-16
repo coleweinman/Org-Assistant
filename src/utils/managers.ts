@@ -36,13 +36,14 @@ const attendeeConverter = (seasonId: string): FirestoreDataConverter<Attendee> =
       throw new Error("Illegal operation");
     },
     fromFirestore: (doc: DocumentData) => {
-      const { name, email, schoolId, discord, seasonAttendance, seasonRsvps } = doc.data();
+      const { name, email, schoolId, discord, year, seasonAttendance, seasonRsvps } = doc.data();
       return {
         id: doc.id,
         name,
         email,
         schoolId,
         discord,
+        year,
         totalEventsAttended: seasonAttendance[seasonId] ?? 0,
         totalEventsRsvpd: seasonRsvps[seasonId] ?? 0,
       };

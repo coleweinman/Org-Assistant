@@ -92,6 +92,57 @@ export const linkEvents = onCall<{
   });
 });
 
+// export const updateAttendees = onRequest(async (request, response) => {
+//   response.set("Access-Control-Allow-Origin", "*");
+//
+//   if (request.method === "OPTIONS") {
+//     // Send response to OPTIONS requests
+//     response.set("Access-Control-Allow-Methods", "GET");
+//     response.set("Access-Control-Allow-Headers", "Content-Type");
+//     response.set("Access-Control-Max-Age", "3600");
+//     response.status(204).send("");
+//     return;
+//   }
+//
+//   const orgId = request.query.orgId as string | undefined;
+//   if (!orgId) {
+//     response
+//       .status(400)
+//       .json({ "status": "error", "message": "Org Id not provided." });
+//     return;
+//   }
+//   const attendees = await db.collection("orgs")
+//     .doc(orgId)
+//     .collection("attendees")
+//     .withConverter<Attendee>(attendeeConverter)
+//     .get();
+//   const checkIns = (
+//     await db.collection("orgs")
+//       .doc(orgId)
+//       .collection("checkIns")
+//       .withConverter<CheckIn>(checkInConverter)
+//       .where("year", "in", ["2024", "2025", "2026", "2027", "grad"])
+//       .get()
+//   ).docs.map((doc) => doc.data());
+//   const batch = db.batch();
+//   for (const attendeeDoc of attendees.docs) {
+//     const attendee = attendeeDoc.data();
+//     if (attendee.seasonRsvps["Fall 2023"] || attendee.seasonAttendance["Fall 2023"]) {
+//       const matchingCheckIn = checkIns.find(({ email }) => email === attendee.email);
+//       if (matchingCheckIn) {
+//         batch.set(attendeeDoc.ref, {
+//           ...attendee,
+//           schoolId: matchingCheckIn.schoolId,
+//           discord: matchingCheckIn.discord ?? undefined,
+//           year: matchingCheckIn.year,
+//         });
+//       }
+//     }
+//   }
+//   await batch.commit();
+//   response.json({ status: "success" });
+// });
+
 export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
   if (!data) {
     error("No data associated with the event");
@@ -223,6 +274,7 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
         email: email.toLowerCase(),
         schoolId: "",
         discord: "",
+        year: "",
         // Default values, to be updated below
         totalEventsAttended: 0,
         totalEventsRsvpd: 0,
@@ -240,7 +292,8 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
     }
 
     setUpdates(t, attendeeRef,
-      getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId, attendee));
+      getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId, attendee),
+    );
     setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
   });
 });

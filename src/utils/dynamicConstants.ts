@@ -16,6 +16,7 @@ import {
   getBooleanDisplayValue,
   getColumnsFromFields,
   getHeaderTransform,
+  getLabelFromId,
   getReverseDataTransform,
   getReverseHeaderTransform,
   timestampToDate,
@@ -23,6 +24,7 @@ import {
 import { Dayjs } from "dayjs";
 import { IconDefinition } from "@fortawesome/free-regular-svg-icons";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+import { YEAR_OPTIONS } from "./staticConstants";
 
 export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBlMx0f35Ia49khVmeYFH6dmmpJEx2uMC0",
@@ -79,14 +81,7 @@ export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [
     label: "Year",
     required: true,
     inputType: InputType.DROPDOWN,
-    options: [
-      { id: "2027", label: "Freshman" },
-      { id: "2026", label: "Sophomore" },
-      { id: "2025", label: "Junior" },
-      { id: "2024", label: "Senior" },
-      { id: "2023", label: "Super senior" },
-      { id: "grad", label: "Grad student" },
-    ],
+    options: YEAR_OPTIONS,
   },
   {
     id: "discord",
@@ -192,6 +187,12 @@ export const ATTENDEE_COLUMNS: ColumnData<Attendee>[] = [
     id: "discord",
     label: "Discord Tag",
     getDisplayValue: (value: string) => value && value.length > 0 ? value : "N/A",
+    type: TableType.TEXT,
+  },
+  {
+    id: "year",
+    label: "Year",
+    getDisplayValue: (value: string) => getLabelFromId(value, YEAR_OPTIONS),
     type: TableType.TEXT,
   },
   {
