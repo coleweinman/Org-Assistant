@@ -1,0 +1,30 @@
+[debug] [2023-10-31T00:13:38.247Z] ----------------------------------------------------------------------
+[debug] [2023-10-31T00:13:38.248Z] Command:       /opt/homebrew/Cellar/node@18/18.16.1_1/bin/node /opt/homebrew/bin/firebase deploy --only functions:addEventToCalendar
+[debug] [2023-10-31T00:13:38.248Z] CLI Version:   12.7.0
+[debug] [2023-10-31T00:13:38.249Z] Platform:      darwin
+[debug] [2023-10-31T00:13:38.249Z] Node Version:  v18.16.1
+[debug] [2023-10-31T00:13:38.249Z] Time:          Mon Oct 30 2023 19:13:38 GMT-0500 (Central Daylight Time)
+[debug] [2023-10-31T00:13:38.249Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2023-10-31T00:13:38.286Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2023-10-31T00:13:38.286Z] > authorizing via signed-in user (emily@sturman.org)
+[debug] [2023-10-31T00:13:38.286Z] [iam] checking project org-assistant for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2023-10-31T00:13:38.287Z] > refreshing access token with scopes: []
+[debug] [2023-10-31T00:13:38.288Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2023-10-31T00:13:38.288Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2023-10-31T00:13:38.546Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2023-10-31T00:13:38.547Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2023-10-31T00:13:38.563Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/org-assistant:testIamPermissions [none]
+[debug] [2023-10-31T00:13:38.563Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/org-assistant:testIamPermissions x-goog-quota-user=projects/org-assistant
+[debug] [2023-10-31T00:13:38.563Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/org-assistant:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2023-10-31T00:13:38.725Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/org-assistant:testIamPermissions 200
+[debug] [2023-10-31T00:13:38.726Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/org-assistant:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2023-10-31T00:13:38.726Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/org-assistant/serviceAccounts/org-assistant@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2023-10-31T00:13:38.726Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/org-assistant/serviceAccounts/org-assistant@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2023-10-31T00:13:39.190Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/org-assistant/serviceAccounts/org-assistant@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2023-10-31T00:13:39.190Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/org-assistant/serviceAccounts/org-assistant@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'org-assistant'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint

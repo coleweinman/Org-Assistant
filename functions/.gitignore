@@ -7,3 +7,6 @@ typings/
 
 # Node.js dependency directory
 node_modules/
+
+# Google service account (for Google Calendar API)
+./src/service-account.json

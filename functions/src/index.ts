@@ -1,20 +1,34 @@
 import { onCall, onRequest } from "firebase-functions/v2/https";
-import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentDeleted,
+  onDocumentUpdated,
+  onDocumentWritten,
+} from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { DocumentReference, FieldPath, FieldValue, getFirestore } from "firebase-admin/firestore";
+import { DocumentReference, getFirestore } from "firebase-admin/firestore";
 import { eventConverter, orgConverter } from "./converters";
 import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
 import {
+  addCalendarEvent,
+  addToCalendarList,
+  deleteCalendarEvent,
   getAttendeeAddUpdates,
   getAttendeeRemoveUpdates,
   getEventAddUpdates,
   getEventRemoveUpdates,
   getSeasonId,
   getWasNewAttendee,
+  removeFromCalendarList,
+  removeLinkedEvents,
   setUpdates,
+  updateCalendarEvent,
+  updateLinkedEvents,
 } from "./helpers";
-import type { Attendee, CheckIn, Org, OrgEvent, PublicOrgEvent, UpdateData } from "./types";
+import type { Attendee, CheckIn, Org, OrgEvent, PublicOrgEvent } from "./types";
 import { error, log } from "firebase-functions/logger";
+import { JWT } from "google-auth-library";
+import { SERVICE_ACCOUNT_KEYFILE } from "./constants";
 
 initializeApp();
 const db = getFirestore();
@@ -92,154 +106,83 @@ export const linkEvents = onCall<{
   });
 });
 
-// export const updateAttendees = onRequest(async (request, response) => {
-//   response.set("Access-Control-Allow-Origin", "*");
-//
-//   if (request.method === "OPTIONS") {
-//     // Send response to OPTIONS requests
-//     response.set("Access-Control-Allow-Methods", "GET");
-//     response.set("Access-Control-Allow-Headers", "Content-Type");
-//     response.set("Access-Control-Max-Age", "3600");
-//     response.status(204).send("");
-//     return;
-//   }
-//
-//   const orgId = request.query.orgId as string | undefined;
-//   if (!orgId) {
-//     response
-//       .status(400)
-//       .json({ "status": "error", "message": "Org Id not provided." });
-//     return;
-//   }
-//   const attendees = await db.collection("orgs")
-//     .doc(orgId)
-//     .collection("attendees")
-//     .withConverter<Attendee>(attendeeConverter)
-//     .get();
-//   const checkIns = (
-//     await db.collection("orgs")
-//       .doc(orgId)
-//       .collection("checkIns")
-//       .withConverter<CheckIn>(checkInConverter)
-//       .where("year", "in", ["2024", "2025", "2026", "2027", "grad"])
-//       .get()
-//   ).docs.map((doc) => doc.data());
-//   const batch = db.batch();
-//   for (const attendeeDoc of attendees.docs) {
-//     const attendee = attendeeDoc.data();
-//     if (attendee.seasonRsvps["Fall 2023"] || attendee.seasonAttendance["Fall 2023"]) {
-//       const matchingCheckIn = checkIns.find(({ email }) => email === attendee.email);
-//       if (matchingCheckIn) {
-//         batch.set(attendeeDoc.ref, {
-//           ...attendee,
-//           schoolId: matchingCheckIn.schoolId,
-//           discord: matchingCheckIn.discord ?? undefined,
-//           year: matchingCheckIn.year,
-//         });
-//       }
-//     }
-//   }
-//   await batch.commit();
-//   response.json({ status: "success" });
-// });
-
-export const updateLinkedEvents = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+export const updateSharedCalendar = onDocumentWritten("orgs/{orgId}", async ({ params, data }) => {
   if (!data) {
-    error("No data associated with the event");
+    error("No data associated with org");
     return;
   }
-  const oldEvent = data.before.data() as OrgEvent;
-  const { eventId } = params;
-  const {
-    name,
-    startTime,
-    endTime,
-    location,
-    modality,
-    virtualEventUrl,
-    linkedEvents,
-  } = data.before.data() as OrgEvent;
-  if (!linkedEvents || linkedEvents.length === 0) {
+  const prevOrg = data.before.data() as Org | undefined;
+  const afterOrg = data.after.data() as Org | undefined;
+  if (prevOrg && afterOrg && prevOrg.calendarId == afterOrg.calendarId) {
     return;
   }
-  await db.runTransaction(async (t) => {
-    const updates: UpdateData = [];
-    if (!startTime.isEqual(oldEvent.startTime)) {
-      updates.push(new FieldPath("startTime"));
-      updates.push(startTime);
+  const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar" });
+  // Remove previous calendar if doc/calendarId has been removed or if calendarId has been edited
+  const removePrevCalendar = prevOrg?.calendarId && (
+    !afterOrg?.calendarId || prevOrg.calendarId !== afterOrg.calendarId
+  );
+  const addNewCalendar = afterOrg?.calendarId && (
+    !prevOrg?.calendarId || prevOrg.calendarId !== afterOrg.calendarId
+  );
+  if (removePrevCalendar) {
+    try {
+      await removeFromCalendarList(prevOrg.calendarId!, auth);
+    } catch (e) {
+      error(`Could not remove calendar ${prevOrg.calendarId} from list for org ${prevOrg.name} with error: `, e);
     }
-    if (!endTime.isEqual(oldEvent.endTime)) {
-      updates.push(new FieldPath("endTime"));
-      updates.push(endTime);
+  }
+  if (addNewCalendar) {
+    try {
+      await addToCalendarList(afterOrg.calendarId!, auth);
+    } catch (e) {
+      error(`Could not add calendar ${afterOrg.calendarId} to list for org ${afterOrg.name} with error: `, e);
     }
-    if (location !== oldEvent.location) {
-      updates.push(new FieldPath("location"));
-      updates.push(location ?? FieldValue.delete());
-    }
-    if (modality !== oldEvent.modality) {
-      updates.push(new FieldPath("modality"));
-      updates.push(modality);
-    }
-    if (virtualEventUrl !== oldEvent.virtualEventUrl) {
-      updates.push(new FieldPath("virtualEventUrl"));
-      updates.push(virtualEventUrl ?? FieldValue.delete());
-    }
-    for (const { org, event } of linkedEvents) {
-      const eventDoc = db.collection("orgs")
-        .doc(org.id)
-        .collection("events")
-        .doc(event.id)
-        .withConverter<OrgEvent>(eventConverter);
-      if (name !== oldEvent.name) {
-        const orgEvent = (
-          await t.get(eventDoc)
-        ).data();
-        if (orgEvent) {
-          const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
-          updates.push(new FieldPath("linkedEvents"));
-          updates.push(FieldValue.arrayRemove(linkedEvent));
-          updates.push(FieldValue.arrayUnion({
-            ...linkedEvent, event: {
-              id: eventId,
-              name,
-            },
-          }));
-        }
-      }
-      setUpdates(t, eventDoc, updates);
-    }
-  });
+  }
 });
 
-export const removeLinkedEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+export const onCreateEvent = onDocumentCreated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
   if (!data) {
     error("No data associated with the event");
     return;
   }
+  try {
+    await addCalendarEvent(db, params.orgId, data);
+  } catch (e) {
+    error(`Failed to create event ${data.id} with error: `, e);
+  }
+});
 
-  const { linkedEvents } = data.data() as OrgEvent;
-  const { eventId } = params;
-  if (!linkedEvents) {
+export const onUpdateEvent = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+  if (!data) {
+    error("No data associated with the event");
     return;
   }
-  await db.runTransaction(async (t) => {
-    for (const { org, event } of linkedEvents) {
-      const eventDoc = db.collection("orgs")
-        .doc(org.id)
-        .collection("events")
-        .doc(event.id)
-        .withConverter<OrgEvent>(eventConverter);
-      const orgEvent = (
-        await t.get(eventDoc)
-      ).data();
-      if (orgEvent) {
-        const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
-        t.update(eventDoc, {
-          linkedEvents: FieldValue.arrayRemove(linkedEvent),
-        });
-      }
-    }
-  });
+  await Promise.all([
+    updateLinkedEvents(
+      db,
+      params.eventId,
+      data.before.data() as OrgEvent,
+      data.after.data() as OrgEvent,
+    ).catch((e) => error(`Failed to updated linked events for ${data.after.id} with error: `, e)),
+    updateCalendarEvent(db, params.orgId, data.after)
+      .catch((e) => error(`Failed to update event ${data.after.id} with error: `, e)),
+  ]);
+});
+
+export const onDeleteEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
+  if (!data) {
+    error("No data associated with the event");
+    return;
+  }
+  await Promise.all([
+    removeLinkedEvents(
+      db,
+      params.eventId,
+      data.data() as OrgEvent,
+    ).catch((e) => error(`Failed to delete linked events for ${params.eventId} with error: `, e)),
+    deleteCalendarEvent(db, params.orgId, params.eventId)
+      .catch((e) => error(`Failed to delete event ${params.eventId} with error: `, e)),
+  ]);
 });
 
 export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkInId}", async ({ params, data }) => {
