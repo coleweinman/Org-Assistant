@@ -9,4 +9,4 @@ typings/
 node_modules/
 
 # Google service account (for Google Calendar API)
-./src/service-account.json
+src/service-account.json

@@ -106,7 +106,7 @@ export const linkEvents = onCall<{
   });
 });
 
-export const updateSharedCalendar = onDocumentWritten("orgs/{orgId}", async ({ params, data }) => {
+export const updateSharedCalendar = onDocumentWritten("orgs/{orgId}", async ({ data }) => {
   if (!data) {
     error("No data associated with org");
     return;

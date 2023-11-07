@@ -241,12 +241,47 @@ export async function removeLinkedEvents(db: Firestore, eventId: string, { linke
   });
 }
 
+function getCode(ch: string) {
+  return ch.charCodeAt(0);
+}
+
+function charModulo(ch: string, zero: string, mod: string) {
+  return String.fromCharCode(getCode(zero) + (
+    getCode(ch) - getCode(zero)
+  ) % (
+    getCode(mod) - getCode(zero) + 1
+  ));
+}
+
+function charIsBetween(ch: string, first: string, last: string) {
+  return getCode(ch) >= getCode(first) && getCode(ch) <= getCode(last);
+}
+
+function firestoreToCalendarEventId(firestoreId: string): string {
+  // GCal IDs are case-insensitive and a-v only, so we encode a firestore doc id as:
+  // [lowercase id mod v (22)][0 if lowercase/number, 1 if uppercase, 2 if wrapped around lowercase, 3 if wrapped
+  // around uppercase]
+  let eventId = "";
+  for (const ch of firestoreId) {
+    // Wrap around at "v"
+    eventId += charIsBetween(ch, "0", "9") ? ch : charModulo(ch.toLowerCase(), "a", "v");
+  }
+  for (const ch of firestoreId) {
+    const isUpperCase = charIsBetween(ch, "A", "Z") ? 1 : 0;
+    const isWrapped = charIsBetween(ch.toLowerCase(), "v", "z") ? 2 : 0;
+    eventId += (
+      isWrapped + isUpperCase
+    ).toString();
+  }
+  return eventId;
+}
+
 export async function addToCalendarList(id: string, auth: JWT) {
-  await calendar.calendarList.insert({ auth, requestBody: { id } });
+  await calendar.calendarList.insert({ auth, requestBody: { id: firestoreToCalendarEventId(id) } });
 }
 
 export async function removeFromCalendarList(id: string, auth: JWT) {
-  await calendar.calendarList.delete({ auth, calendarId: id });
+  await calendar.calendarList.delete({ auth, calendarId: firestoreToCalendarEventId(id) });
 }
 
 function getCalendarRequestBody(event: OrgEvent): CalendarV3.Schema$Event {
@@ -280,7 +315,10 @@ export async function addCalendarEvent(
   await calendar.events.insert({
     auth,
     calendarId,
-    requestBody: { id: eventDoc.id, ...getCalendarRequestBody(eventDoc.data() as OrgEvent) },
+    requestBody: {
+      id: firestoreToCalendarEventId(eventDoc.id),
+      ...getCalendarRequestBody(eventDoc.data() as OrgEvent),
+    },
   });
 }
 
@@ -295,15 +333,16 @@ export async function updateCalendarEvent(
     return;
   }
   const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
+  const eventId = firestoreToCalendarEventId(eventDoc.id);
   try {
-    await calendar.events.get({ auth, calendarId, eventId: eventDoc.id });
+    await calendar.events.get({ auth, calendarId, eventId });
   } catch (e: any) {
     if (e.error.errors.find(({ reason }: { reason: string }) => reason === "notFound")) {
       // Create a new event if the calendar event doesn't already exist
       await calendar.events.insert({
         auth,
         calendarId,
-        requestBody: { id: eventDoc.id, ...getCalendarRequestBody(eventDoc.data() as OrgEvent) },
+        requestBody: { id: eventId, ...getCalendarRequestBody(eventDoc.data() as OrgEvent) },
       });
       return;
     }
@@ -312,7 +351,7 @@ export async function updateCalendarEvent(
   await calendar.events.update({
     auth,
     calendarId,
-    eventId: eventDoc.id,
+    eventId,
     requestBody: getCalendarRequestBody(eventDoc.data() as OrgEvent),
   });
 }
@@ -324,5 +363,5 @@ export async function deleteCalendarEvent(db: Firestore, orgId: string, eventId:
     return;
   }
   const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
-  await calendar.events.delete({ auth, calendarId, eventId });
+  await calendar.events.delete({ auth, calendarId, eventId: firestoreToCalendarEventId(eventId) });
 }
