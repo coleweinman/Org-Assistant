@@ -6,6 +6,7 @@ export enum InputType {
   CHECKBOX = "checkbox",
   DROPDOWN = "dropdown",
   DATE = "date",
+  BOOLEAN = "boolean",
 }
 
 export enum TableType {

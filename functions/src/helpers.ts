@@ -277,11 +277,11 @@ function firestoreToCalendarEventId(firestoreId: string): string {
 }
 
 export async function addToCalendarList(id: string, auth: JWT) {
-  await calendar.calendarList.insert({ auth, requestBody: { id: firestoreToCalendarEventId(id) } });
+  await calendar.calendarList.insert({ auth, requestBody: { id } });
 }
 
 export async function removeFromCalendarList(id: string, auth: JWT) {
-  await calendar.calendarList.delete({ auth, calendarId: firestoreToCalendarEventId(id) });
+  await calendar.calendarList.delete({ auth, calendarId: id });
 }
 
 function getCalendarRequestBody(event: OrgEvent): CalendarV3.Schema$Event {
@@ -311,7 +311,6 @@ export async function addCalendarEvent(
     return;
   }
   const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
-  console.log(eventDoc.data().startTime.toDate().toISOString());
   await calendar.events.insert({
     auth,
     calendarId,
@@ -336,8 +335,10 @@ export async function updateCalendarEvent(
   const eventId = firestoreToCalendarEventId(eventDoc.id);
   try {
     await calendar.events.get({ auth, calendarId, eventId });
-  } catch (e: any) {
-    if (e.error.errors.find(({ reason }: { reason: string }) => reason === "notFound")) {
+  } catch (e) {
+    if ((
+      e as any
+    ).errors?.find(({ reason }: { reason: string }) => reason === "notFound")) {
       // Create a new event if the calendar event doesn't already exist
       await calendar.events.insert({
         auth,

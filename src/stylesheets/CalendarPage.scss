@@ -1,0 +1,39 @@
+@use "constants";
+
+.calendar-page {
+  .calendar-list {
+    background-color: constants.$accent-background;
+    padding: 10px 0;
+    border-radius: constants.$border-radius;
+    border: constants.$border-style;
+    border-bottom: constants.$thick-border-style;
+    margin: 20px;
+
+    h1, p {
+      margin: 10px 40px;
+      padding: 0;
+      text-align: center;
+    }
+
+    li {
+      list-style: none;
+
+      button {
+        display: flex;
+        align-items: center;
+        border: none;
+        width: 100%;
+        border-radius: 0;
+        background-color: transparent;
+
+        .calendar-color {
+          display: inline-block;
+          width: 1em;
+          height: 1em;
+          border-radius: 100%;
+          margin-right: 10px;
+        }
+      }
+    }
+  }
+}

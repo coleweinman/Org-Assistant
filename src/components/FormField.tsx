@@ -2,6 +2,7 @@ import React from "react";
 import DateTimePicker from "./DateTimePicker";
 import { InputType } from "../utils/enums";
 import type {
+  BooleanFieldWithValue,
   DateFieldWithValue,
   FormDataType,
   FormFieldWithValue,
@@ -81,6 +82,17 @@ const FormField = <T extends FormDataType>({
       } = formField as Omit<MultiOptionsFieldWithValue<T>, "inputType">;
       return (
         <CheckboxField label={label} options={options} value={value} setValue={setValue} />
+      );
+    }
+    case InputType.BOOLEAN: {
+      const { id, label, value, setValue } = formField as Omit<BooleanFieldWithValue<T>, "inputType">;
+      return (
+        <div className="boolean-container">
+          <label>
+            {label}:
+            <input type="checkbox" checked={value} value={id as string} onChange={() => setValue(!value)} />
+          </label>
+        </div>
       );
     }
     default:

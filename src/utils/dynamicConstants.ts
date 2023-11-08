@@ -9,6 +9,7 @@ import type {
   FormFieldType,
   LinkedCheckIn,
   NavLink,
+  Org,
   OrgEventWithId,
   OrgEventWithoutLinked,
 } from "./types";
@@ -65,6 +66,11 @@ export const CHECK_IN_REQUIREMENTS: Record<CheckInRequirement, {
 
 export const NAVIGATION_LINKS: NavLink[] = [
   { name: "Home", link: "/" },
+];
+
+export const ORG_FIELDS: FormFieldType<Org>[] = [
+  { id: "name", label: "Org Name", required: true, inputType: InputType.TEXT },
+  { id: "calendarId", label: "Enable Google Calendar", required: true, inputType: InputType.BOOLEAN },
 ];
 
 export const CHECK_IN_FIELDS: FormFieldType<CheckIn>[] = [

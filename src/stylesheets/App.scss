@@ -49,6 +49,35 @@ input[type=number].no-arrows {
   }
 }
 
+/* Checkbox styling */
+input[type=checkbox] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  width: 1.15em;
+  height: 1.15em;
+  border: 0.15em solid currentColor;
+  border-radius: 0.15em;
+  transform: translateY(-0.075em);
+  display: grid;
+  place-content: center;
+
+  &::before {
+    content: "";
+    width: 0.65em;
+    height: 0.65em;
+    transform: scale(0);
+    box-shadow: inset 1em 1em constants.$button-color;
+  }
+
+  &:checked::before {
+    transform: scale(1);
+  }
+}
+
 select {
   padding: 20px;
   font-family: constants.$font-family;
@@ -168,6 +197,9 @@ button {
 }
 
 form {
+  display: flex;
+  flex-direction: column;
+  
   label {
     display: flex;
     flex-direction: column;
@@ -194,6 +226,16 @@ form {
     }
   }
 
+  .boolean-container label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    input {
+      margin-left: 10px;
+    }
+  }
+
   .checkbox-container {
     .checkbox-row {
       display: flex;
@@ -206,38 +248,10 @@ form {
         gap: 0.5em;
         align-items: center;
         cursor: pointer;
+      }
 
-        input[type=checkbox] {
-          -webkit-appearance: none;
-          appearance: none;
-          background-color: #fff;
-          margin: 0;
-          font: inherit;
-          color: currentColor;
-          width: 1.15em;
-          height: 1.15em;
-          border: 0.15em solid currentColor;
-          border-radius: 0.15em;
-          transform: translateY(-0.075em);
-          display: grid;
-          place-content: center;
-
-          &::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            transform: scale(0);
-            box-shadow: inset 1em 1em constants.$button-color;
-          }
-
-          &:checked::before {
-            transform: scale(1);
-          }
-        }
-
-        & + label {
-          margin-top: 1em;
-        }
+      input[type=checkbox] + label {
+        margin-top: 1em;
       }
     }
   }
@@ -319,5 +333,38 @@ button {
 
   &.hidden {
     transform: translateY(calc(100% + 20px));
+  }
+}
+
+.editable-details {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+
+  th {
+    text-align: right;
+  }
+
+  &.editing {
+    flex-direction: column;
+  }
+
+  .column {
+    padding: 20px;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .editable-details-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 750px;
+    align-items: stretch;
+    padding: 30px;
   }
 }

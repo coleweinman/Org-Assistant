@@ -110,7 +110,9 @@ const eventWithIdConverter: FirestoreDataConverter<OrgEventWithId> = {
 };
 
 const orgConverter: FirestoreDataConverter<Org> = {
-  toFirestore: ({ id, ...org }: Org) => org as DocumentData,
+  toFirestore: ({ id, calendarId, ...org }: Org) => (
+    org as DocumentData
+  ),
   fromFirestore: (doc: DocumentData) => (
     {
       ...(
@@ -356,7 +358,7 @@ export async function addEvent(db: Firestore, orgId: string, event: Omit<OrgEven
 }
 
 export async function updateEvent(db: Firestore, orgId: string, eventId: string, event: OrgEvent) {
-  await updateDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), event);
+  await setDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), event);
 }
 
 export async function deleteEvent(db: Firestore, orgId: string, eventId: string) {
@@ -400,4 +402,12 @@ export function getOrg(db: Firestore, orgId: string, callback: (org: Org | null)
 export async function getOrgOnce(db: Firestore, orgId: string) {
   const orgDoc = await getDoc(doc(db, "orgs", orgId).withConverter<Org>(orgConverter));
   return orgDoc.data();
+}
+
+export async function updateOrg(db: Firestore, org: Org) {
+  await updateDoc(doc(db, "orgs", org.id).withConverter<Org>(orgConverter), org);
+}
+
+export async function updateCalendarId(db: Firestore, orgId: string, calendarId: string | null) {
+  await updateDoc(doc(db, "orgs", orgId), { calendarId });
 }
