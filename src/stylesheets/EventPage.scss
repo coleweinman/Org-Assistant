@@ -19,39 +19,6 @@
     }
   }
 
-  .event-settings {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-
-    &.editing {
-      flex-direction: column;
-    }
-
-    .column {
-      padding: 20px;
-    }
-
-    .event-action-buttons {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-  }
-
-  .new-event-form {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 750px;
-    align-items: stretch;
-    padding: 30px;
-
-    .new-tab-icon {
-      margin-left: 10px;
-    }
-  }
-
   .custom-tooltip {
     background-color: constants.$accent-background;
     padding: 10px;

@@ -1,7 +1,23 @@
-import { DocumentReference, FieldPath, FieldValue, Firestore, Transaction } from "firebase-admin/firestore";
+import {
+  DocumentReference,
+  FieldPath,
+  FieldValue,
+  Firestore,
+  QueryDocumentSnapshot,
+  Transaction,
+} from "firebase-admin/firestore";
 import { getEventDoc } from "./firestoreHelpers";
-import { Attendee, UpdateData } from "./types";
+import type { Attendee, OrgEvent, UpdateData } from "./types";
+import { Org } from "./types";
 import { error } from "firebase-functions/logger";
+import { type calendar_v3 as CalendarV3, google } from "googleapis";
+import { JWT } from "google-auth-library";
+import { Modality } from "./enums";
+import { eventConverter, orgConverter } from "./converters";
+import { SERVICE_ACCOUNT_KEYFILE } from "./constants";
+
+const calendar = google.calendar("v3");
+const TIME_ZONE = "America/Chicago";
 
 export async function getSeasonId(t: Transaction, db: Firestore, orgId: string, eventId: string) {
   // Get event
@@ -137,4 +153,216 @@ export function setUpdates(db: Transaction, ref: DocumentReference, updates: Upd
     return;
   }
   db.update(ref, updates[0], updates[1], ...updates.slice(2));
+}
+
+export async function updateLinkedEvents(db: Firestore, eventId: string, before: OrgEvent, after: OrgEvent) {
+  const {
+    name,
+    startTime,
+    endTime,
+    location,
+    modality,
+    virtualEventUrl,
+    linkedEvents,
+  } = after;
+  if (!linkedEvents || linkedEvents.length === 0) {
+    return;
+  }
+  await db.runTransaction(async (t) => {
+    const updates: UpdateData = [];
+    if (!startTime.isEqual(before.startTime)) {
+      updates.push(new FieldPath("startTime"));
+      updates.push(startTime);
+    }
+    if (!endTime.isEqual(before.endTime)) {
+      updates.push(new FieldPath("endTime"));
+      updates.push(endTime);
+    }
+    if (location !== before.location) {
+      updates.push(new FieldPath("location"));
+      updates.push(location ?? FieldValue.delete());
+    }
+    if (modality !== before.modality) {
+      updates.push(new FieldPath("modality"));
+      updates.push(modality);
+    }
+    if (virtualEventUrl !== before.virtualEventUrl) {
+      updates.push(new FieldPath("virtualEventUrl"));
+      updates.push(virtualEventUrl ?? FieldValue.delete());
+    }
+    for (const { org, event } of linkedEvents) {
+      const eventDoc = db.collection("orgs")
+        .doc(org.id)
+        .collection("events")
+        .doc(event.id)
+        .withConverter<OrgEvent>(eventConverter);
+      if (name !== before.name) {
+        const orgEvent = (
+          await t.get(eventDoc)
+        ).data();
+        if (orgEvent) {
+          const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
+          updates.push(new FieldPath("linkedEvents"));
+          updates.push(FieldValue.arrayRemove(linkedEvent));
+          updates.push(FieldValue.arrayUnion({
+            ...linkedEvent, event: {
+              id: eventId,
+              name,
+            },
+          }));
+        }
+      }
+      setUpdates(t, eventDoc, updates);
+    }
+  });
+}
+
+export async function removeLinkedEvents(db: Firestore, eventId: string, { linkedEvents }: OrgEvent) {
+  if (!linkedEvents) {
+    return;
+  }
+  await db.runTransaction(async (t) => {
+    for (const { org, event } of linkedEvents) {
+      const eventDoc = db.collection("orgs")
+        .doc(org.id)
+        .collection("events")
+        .doc(event.id)
+        .withConverter<OrgEvent>(eventConverter);
+      const orgEvent = (
+        await t.get(eventDoc)
+      ).data();
+      if (orgEvent) {
+        const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
+        t.update(eventDoc, {
+          linkedEvents: FieldValue.arrayRemove(linkedEvent),
+        });
+      }
+    }
+  });
+}
+
+function getCode(ch: string) {
+  return ch.charCodeAt(0);
+}
+
+function charModulo(ch: string, zero: string, mod: string) {
+  return String.fromCharCode(getCode(zero) + (
+    getCode(ch) - getCode(zero)
+  ) % (
+    getCode(mod) - getCode(zero) + 1
+  ));
+}
+
+function charIsBetween(ch: string, first: string, last: string) {
+  return getCode(ch) >= getCode(first) && getCode(ch) <= getCode(last);
+}
+
+function firestoreToCalendarEventId(firestoreId: string): string {
+  // GCal IDs are case-insensitive and a-v only, so we encode a firestore doc id as:
+  // [lowercase id mod v (22)][0 if lowercase/number, 1 if uppercase, 2 if wrapped around lowercase, 3 if wrapped
+  // around uppercase]
+  let eventId = "";
+  for (const ch of firestoreId) {
+    // Wrap around at "v"
+    eventId += charIsBetween(ch, "0", "9") ? ch : charModulo(ch.toLowerCase(), "a", "v");
+  }
+  for (const ch of firestoreId) {
+    const isUpperCase = charIsBetween(ch, "A", "Z") ? 1 : 0;
+    const isWrapped = charIsBetween(ch.toLowerCase(), "v", "z") ? 2 : 0;
+    eventId += (
+      isWrapped + isUpperCase
+    ).toString();
+  }
+  return eventId;
+}
+
+export async function addToCalendarList(id: string, auth: JWT) {
+  await calendar.calendarList.insert({ auth, requestBody: { id } });
+}
+
+export async function removeFromCalendarList(id: string, auth: JWT) {
+  await calendar.calendarList.delete({ auth, calendarId: id });
+}
+
+function getCalendarRequestBody(event: OrgEvent): CalendarV3.Schema$Event {
+  return {
+    summary: event.name,
+    description: event.description,
+    location: event.modality === Modality.VIRTUAL ? event.virtualEventUrl : event.location,
+    start: {
+      dateTime: event.startTime.toDate().toISOString(),
+      timeZone: TIME_ZONE,
+    },
+    end: {
+      dateTime: event.endTime.toDate().toISOString(),
+      timeZone: TIME_ZONE,
+    },
+  };
+}
+
+export async function addCalendarEvent(
+  db: Firestore,
+  orgId: string,
+  eventDoc: QueryDocumentSnapshot,
+) {
+  const orgDoc = await db.collection("orgs").doc(orgId).withConverter<Org>(orgConverter).get();
+  const calendarId = orgDoc.data()?.calendarId;
+  if (!calendarId) {
+    return;
+  }
+  const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
+  await calendar.events.insert({
+    auth,
+    calendarId,
+    requestBody: {
+      id: firestoreToCalendarEventId(eventDoc.id),
+      ...getCalendarRequestBody(eventDoc.data() as OrgEvent),
+    },
+  });
+}
+
+export async function updateCalendarEvent(
+  db: Firestore,
+  orgId: string,
+  eventDoc: QueryDocumentSnapshot,
+) {
+  const orgDoc = await db.collection("orgs").doc(orgId).withConverter<Org>(orgConverter).get();
+  const calendarId = orgDoc.data()?.calendarId;
+  if (!calendarId) {
+    return;
+  }
+  const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
+  const eventId = firestoreToCalendarEventId(eventDoc.id);
+  try {
+    await calendar.events.get({ auth, calendarId, eventId });
+  } catch (e) {
+    if ((
+      e as any
+    ).errors?.find(({ reason }: { reason: string }) => reason === "notFound")) {
+      // Create a new event if the calendar event doesn't already exist
+      await calendar.events.insert({
+        auth,
+        calendarId,
+        requestBody: { id: eventId, ...getCalendarRequestBody(eventDoc.data() as OrgEvent) },
+      });
+      return;
+    }
+    throw e;
+  }
+  await calendar.events.update({
+    auth,
+    calendarId,
+    eventId,
+    requestBody: getCalendarRequestBody(eventDoc.data() as OrgEvent),
+  });
+}
+
+export async function deleteCalendarEvent(db: Firestore, orgId: string, eventId: string) {
+  const orgDoc = await db.collection("orgs").doc(orgId).withConverter<Org>(orgConverter).get();
+  const calendarId = orgDoc.data()?.calendarId;
+  if (!calendarId) {
+    return;
+  }
+  const auth = new JWT({ keyFile: SERVICE_ACCOUNT_KEYFILE, scopes: "https://www.googleapis.com/auth/calendar.events" });
+  await calendar.events.delete({ auth, calendarId, eventId: firestoreToCalendarEventId(eventId) });
 }

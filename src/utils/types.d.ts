@@ -47,11 +47,16 @@ type MultiOptionsFieldType<T extends FormDataType> = BaseField<T> & {
   options: FormOption[],
 };
 
+export type BooleanFieldType<T extends FormDataType> = BaseField<T> & {
+  inputType: InputType.BOOLEAN
+};
+
 export type FormFieldType<T extends FormDataType> =
   TextFieldType<T>
   | DateFieldType<T>
   | SingleOptionsFieldType<T>
-  | MultiOptionsFieldType<T>;
+  | MultiOptionsFieldType<T>
+  | BooleanFieldType<T>;
 
 export type TextFieldWithValue<T extends FormDataType> = TextFieldType<T> & {
   value: string,
@@ -73,11 +78,17 @@ export type MultiOptionsFieldWithValue<T extends FormDataType> = MultiOptionsFie
   setValue: (value: string[]) => void,
 };
 
+export type BooleanFieldWithValue<T extends FormDataType> = BooleanFieldType<T> & {
+  value: boolean,
+  setValue: (value: boolean) => void,
+};
+
 export type FormFieldWithValue<T extends FormDataType> =
   TextFieldWithValue<T>
   | DateFieldWithValue<T>
   | SingleOptionsFieldWithValue<T>
-  | MultiOptionsFieldWithValue<T>;
+  | MultiOptionsFieldWithValue<T>
+  | BooleanFieldWithValue<T>;
 
 export type YearGroup = {
   year: string,
@@ -179,6 +190,7 @@ export type Org = {
   name: string,
   currentSeasonId: string,
   seasons: string[],
+  calendarId: string | null,
 };
 
 export type ColumnData<T extends FormDataType> = {
@@ -240,3 +252,37 @@ export type ActionButton = {
 } | {
   element: React.ReactElement
 };
+
+export type GoogleCalendarListItem = {
+  kind: "calendar#calendarListEntry",
+  etag: string,
+  id: string,
+  summary: string,
+  description: string,
+  location: string,
+  timeZone: string,
+  summaryOverride: string,
+  colorId: string,
+  backgroundColor: string,
+  foregroundColor: string,
+  hidden: boolean,
+  selected: boolean,
+  accessRole: string,
+  defaultReminders: {
+    method: string,
+    minutes: integer
+  }[],
+  notificationSettings: {
+    notifications: {
+      type: string,
+      method: string
+    }[]
+  },
+  primary: boolean,
+  deleted: boolean,
+  conferenceProperties: {
+    allowedConferenceSolutionTypes: string[]
+  }
+}
+
+export type GoogleCalendar = Pick<GoogleCalendarListItem, "id" | "summary" | "backgroundColor">;

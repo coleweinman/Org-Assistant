@@ -47,6 +47,20 @@ export function dateStringToTimestamp(dateStr: string): Timestamp {
   return Timestamp.fromDate(dayjs(dateStr, DATE_FORMAT).toDate());
 }
 
+/////////////////
+// URL helpers //
+/////////////////
+
+export function parseHashParams(hash: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  const hashPairs = hash.replace("#", "").split("&");
+  for (const pair of hashPairs) {
+    const [key, value] = pair.split("=");
+    params[key] = value;
+  }
+  return params;
+}
+
 //////////////////////
 // Firebase helpers //
 //////////////////////
@@ -106,6 +120,12 @@ export function getFormFieldWithValue<T extends FormDataType>(
         ) as string[],
         setValue: (newValue: string[]) => setFieldValue(field.id, newValue),
       };
+    case InputType.BOOLEAN:
+      return {
+        ...field,
+        value: !!value,
+        setValue: (newValue: boolean) => setFieldValue(field.id, newValue),
+      };
   }
 }
 
@@ -152,7 +172,7 @@ export function isFieldFilled<T extends FormDataType>(
   value: FormValue<T> | undefined,
   field?: FormFieldType<T>,
 ): boolean {
-  if (!value) {
+  if (!value && inputType !== InputType.BOOLEAN) {
     return false;
   }
   switch (inputType) {
@@ -175,6 +195,8 @@ export function isFieldFilled<T extends FormDataType>(
       return (
         value as Dayjs
       ).isValid();
+    case InputType.BOOLEAN:
+      return true;
   }
 }
 
@@ -242,6 +264,8 @@ function inputTypeToTableType(inputType: InputType): TableType {
       return TableType.MULTI;
     case InputType.DATE:
       return TableType.DATE;
+    case InputType.BOOLEAN:
+      return TableType.BOOLEAN;
   }
 }
 
@@ -313,9 +337,6 @@ export function getColumnDef<T extends FormDataType>(columns: ColumnData<T>[]): 
 }
 
 function isBlank<T extends FormDataType>(value: T[keyof T], inputType: InputType): boolean {
-  if (!value) {
-    return true;
-  }
   switch (inputType) {
     // Strings or arrays
     case InputType.TEXT:
@@ -324,19 +345,19 @@ function isBlank<T extends FormDataType>(value: T[keyof T], inputType: InputType
     case InputType.RADIO:
     case InputType.DROPDOWN:
     case InputType.CHECKBOX:
-      if ((
+      return !value || (
         value as string | string[]
-      ).length === 0) {
-        return true;
-      }
+      ).length === 0;
+    case InputType.BOOLEAN:
+    case InputType.DATE:
+      return false;
   }
-  return false;
 }
 
 export function getDisplayValue<T extends FormDataType>(
   value: T[keyof T],
   field: FormFieldType<T>,
-): string {
+): string | ReactElement {
   // Check if value is left blank (return "N/A")
   if (isBlank(value, field.inputType)) {
     return "N/A";
@@ -367,6 +388,8 @@ export function getDisplayValue<T extends FormDataType>(
       return (
         value as string
       ).toLowerCase();
+    case InputType.BOOLEAN:
+      return getBooleanDisplayValue(value as boolean);
     default:
       return value as string;
   }

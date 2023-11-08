@@ -1,7 +1,6 @@
 import { firestore } from "firebase-admin";
-import { Timestamp } from "firebase/firestore";
 import { Modality } from "./enums";
-import { FieldPath, FieldValue } from "firebase-admin/lib/firestore";
+import { FieldPath, FieldValue, Timestamp } from "firebase-admin/lib/firestore";
 
 export type Attendee = {
   name: string,
@@ -66,6 +65,7 @@ export type Org = {
   name: string,
   currentSeasonId: string,
   seasons: string[],
+  calendarId: string | null,
 };
 
 export type UpdateData = (FieldPath | FieldValue | string)[];

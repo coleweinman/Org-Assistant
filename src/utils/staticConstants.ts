@@ -22,3 +22,5 @@ export const YEAR_OPTIONS: FormOption[] = [
   { id: "2023", label: "Super senior" },
   { id: "grad", label: "Grad student" },
 ];
+
+export const SERVICE_ACCOUNT_EMAIL = "google-calendar@org-assistant.iam.gserviceaccount.com";
