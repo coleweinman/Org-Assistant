@@ -1,4 +1,4 @@
-import credentials from "../credentials.json";
+import credentials from "../credentials-public.json";
 import axios from "axios";
 import { GoogleCalendar, GoogleCalendarListItem } from "./types";
 

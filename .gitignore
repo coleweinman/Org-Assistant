@@ -22,5 +22,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# credentials for Google Calendar API
-src/credentials.json
+# environment variables
+.env
