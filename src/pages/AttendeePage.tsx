@@ -37,7 +37,7 @@ const AttendeePage: React.FunctionComponent<AttendeePageProps> = ({ db }) => {
         }
       });
     }
-  }, [db, orgId, attendeeId, navigate, state.email]);
+  }, [db, orgId, attendeeId, navigate, state?.email]);
 
   // Listen and unsubscribe from check ins
   React.useEffect(() => {
