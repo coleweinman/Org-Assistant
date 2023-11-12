@@ -13,6 +13,7 @@ import type { Attendee, FormState, Org, OrgEventWithId, OrgPageParams } from "..
 import OrgSettings from "../components/OrgSettings";
 import "../stylesheets/OrgPage.scss";
 import { revokeCalendarAuth, shareCalendarAuth } from "../utils/googleCalendar";
+import { executeAllUnsubs } from "../utils/staticHelpers";
 
 type OrgPageProps = {
   db: Firestore,
@@ -51,32 +52,30 @@ const OrgPage: React.FunctionComponent<OrgPageProps> = ({ db }) => {
     if (!seasonId) {
       return unsubOrg;
     }
-    const unsubEvents = getEvents(db, orgId!, seasonId, (events: OrgEventWithId[]) => setEvents(events));
-    const unsubAttendees = getAttendees(db, orgId!, seasonId, setAttendees);
-    return () => {
-      unsubEvents();
-      unsubAttendees();
-      unsubOrg();
-    };
+    return executeAllUnsubs(
+      unsubOrg,
+      getEvents(db, orgId!, seasonId, (events: OrgEventWithId[]) => setEvents(events)),
+      getAttendees(db, orgId!, seasonId, setAttendees),
+    );
   }, [orgId, seasonId, db]);
 
-  return !(
-    orgId && seasonId && org
-  ) ? (
-    <Loading className="org-page" />
-  ) : (
-    <Page className="org-page">
-      <Helmet>
-        <title>{org.name} &bull; Org Assistant</title>
-      </Helmet>
-      <BackButton to="/" />
-      <h1 className="header">{org.name}</h1>
-      <SeasonSelect seasonId={seasonId} setSeasonId={setSeasonId} allSeasonIds={org.seasons} />
-      <EventTable orgId={orgId} events={events} />
-      <AttendeeTable orgName={org.name} orgId={orgId} attendees={attendees} />
-      <OrgSettings org={org} onOrgEdit={onOrgEdit} />
-    </Page>
-  );
+  if (!orgId || !seasonId || !org) {
+    return <Loading className="org-page" />;
+  } else {
+    return (
+      <Page className="org-page">
+        <Helmet>
+          <title>{org.name} &bull; Org Assistant</title>
+        </Helmet>
+        <BackButton to="/" />
+        <h1 className="header">{org.name}</h1>
+        <SeasonSelect seasonId={seasonId} setSeasonId={setSeasonId} allSeasonIds={org.seasons} />
+        <EventTable orgId={orgId} events={events} />
+        <AttendeeTable orgName={org.name} orgId={orgId} attendees={attendees} />
+        <OrgSettings org={org} onOrgEdit={onOrgEdit} />
+      </Page>
+    );
+  }
 };
 
 export default OrgPage;

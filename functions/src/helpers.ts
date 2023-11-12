@@ -5,9 +5,10 @@ import {
   Firestore,
   QueryDocumentSnapshot,
   Transaction,
+  WriteBatch,
 } from "firebase-admin/firestore";
 import { getEventDoc } from "./firestoreHelpers";
-import type { Attendee, OrgEvent, UpdateData } from "./types";
+import type { Attendee, LinkedOrg, OrgEvent, UpdateData } from "./types";
 import { Org } from "./types";
 import { error } from "firebase-functions/logger";
 import { type calendar_v3 as CalendarV3, google } from "googleapis";
@@ -148,14 +149,112 @@ export function getEventRemoveUpdates(rsvp: boolean, checkIn: boolean, isNewAtte
   return [...rsvpUpdates, ...checkInUpdates];
 }
 
-export function setUpdates(db: Transaction, ref: DocumentReference, updates: UpdateData) {
+export function setUpdates(db: Transaction | WriteBatch, ref: DocumentReference, updates: UpdateData) {
   if (updates.length < 2) {
     return;
   }
   db.update(ref, updates[0], updates[1], ...updates.slice(2));
 }
 
-export async function updateLinkedEvents(db: Firestore, eventId: string, before: OrgEvent, after: OrgEvent) {
+// Returns a - b
+function arrayDifference<T>(a: T[], b: T[], equals: (x: T, y: T) => boolean): T[] {
+  return a.filter((x) => !b.some((y) => equals(x, y)));
+}
+
+function splitLinkedOrgs(before: LinkedOrg[], after: LinkedOrg[]): {
+  add: LinkedOrg[],
+  remove: LinkedOrg[],
+  persist: LinkedOrg[]
+} {
+  const equals = (org1: LinkedOrg, org2: LinkedOrg) => org1.id === org2.id;
+  const add = arrayDifference(after, before, equals);
+  return {
+    add,
+    remove: arrayDifference(before, after, equals),
+    persist: arrayDifference(after, add, equals),
+  };
+}
+
+async function linkEvents(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  event: Omit<OrgEvent, "linkedEvents">,
+  toAdd: LinkedOrg[],
+  persisting: LinkedOrg[],
+) {
+  await db.runTransaction(async (t) => {
+    const orgDoc = await t.get(db.collection("orgs").doc(orgId).withConverter<Org>(orgConverter));
+    const org = orgDoc.data();
+    if (!org) {
+      return;
+    }
+    const sourceLinkedOrg: LinkedOrg = { id: orgId, name: org.name };
+    for (let i = 0; i < toAdd.length; i++) {
+      t.set(db.collection("orgs")
+        .doc(toAdd[i].id)
+        .collection("events")
+        .doc(eventId)
+        .withConverter<OrgEvent>(eventConverter), {
+        ...event,
+        rsvpCount: 0,
+        newRsvpCount: 0,
+        newAttendeeCount: 0,
+        attendeeCount: 0,
+        linkedEvents: [sourceLinkedOrg, ...persisting, ...toAdd.slice(0, i), ...toAdd.slice(i + 1)],
+      });
+    }
+  });
+}
+
+async function unlinkEvents(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  toRemove: LinkedOrg[],
+  isDeleting: boolean,
+) {
+  await db.runTransaction(async (t) => {
+    const orgDoc = await t.get(db.collection("orgs").doc(orgId).withConverter<Org>(orgConverter));
+    const org = orgDoc.data();
+    if (!org) {
+      return;
+    }
+    // Remove source org from all linked events
+    for (const { id } of toRemove) {
+      t.update(
+        db.collection("orgs").doc(id).collection("events").doc(eventId),
+        { linkedEvents: FieldValue.arrayRemove({ id: orgId, name: org.name }) },
+      );
+    }
+    // Remove from source event if doc isn't being deleted
+    if (!isDeleting) {
+      t.update(
+        db.collection("orgs").doc(orgId).collection("events").doc(eventId),
+        { linkedEvents: FieldValue.arrayRemove(...toRemove) },
+      );
+    }
+  });
+}
+
+export async function updateLinkedEvents(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  { linkedEvents, ...event }: OrgEvent,
+  previouslyLinked: LinkedOrg[] = [],
+  isDeleting = false,
+) {
+  const { add, remove, persist } = splitLinkedOrgs(previouslyLinked, linkedEvents);
+  if (add.length > 0) {
+    await linkEvents(db, orgId, eventId, event, add, persist);
+  }
+  if (remove.length > 0) {
+    await unlinkEvents(db, orgId, eventId, remove, isDeleting);
+  }
+}
+
+export async function updateLinkedEventData(db: Firestore, eventId: string, before: OrgEvent, after: OrgEvent) {
   const {
     name,
     startTime,
@@ -168,78 +267,65 @@ export async function updateLinkedEvents(db: Firestore, eventId: string, before:
   if (!linkedEvents || linkedEvents.length === 0) {
     return;
   }
-  await db.runTransaction(async (t) => {
-    const updates: UpdateData = [];
-    if (!startTime.isEqual(before.startTime)) {
-      updates.push(new FieldPath("startTime"));
-      updates.push(startTime);
-    }
-    if (!endTime.isEqual(before.endTime)) {
-      updates.push(new FieldPath("endTime"));
-      updates.push(endTime);
-    }
-    if (location !== before.location) {
-      updates.push(new FieldPath("location"));
-      updates.push(location ?? FieldValue.delete());
-    }
-    if (modality !== before.modality) {
-      updates.push(new FieldPath("modality"));
-      updates.push(modality);
-    }
-    if (virtualEventUrl !== before.virtualEventUrl) {
-      updates.push(new FieldPath("virtualEventUrl"));
-      updates.push(virtualEventUrl ?? FieldValue.delete());
-    }
-    for (const { org, event } of linkedEvents) {
-      const eventDoc = db.collection("orgs")
-        .doc(org.id)
-        .collection("events")
-        .doc(event.id)
-        .withConverter<OrgEvent>(eventConverter);
-      if (name !== before.name) {
-        const orgEvent = (
-          await t.get(eventDoc)
-        ).data();
-        if (orgEvent) {
-          const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
-          updates.push(new FieldPath("linkedEvents"));
-          updates.push(FieldValue.arrayRemove(linkedEvent));
-          updates.push(FieldValue.arrayUnion({
-            ...linkedEvent, event: {
-              id: eventId,
-              name,
-            },
-          }));
-        }
-      }
-      setUpdates(t, eventDoc, updates);
-    }
-  });
+  const batch = db.batch();
+  const updates: UpdateData = [];
+  if (name !== before.name) {
+    updates.push(new FieldPath("name"));
+    updates.push(name);
+  }
+  if (!startTime.isEqual(before.startTime)) {
+    updates.push(new FieldPath("startTime"));
+    updates.push(startTime);
+  }
+  if (!endTime.isEqual(before.endTime)) {
+    updates.push(new FieldPath("endTime"));
+    updates.push(endTime);
+  }
+  if (location !== before.location) {
+    updates.push(new FieldPath("location"));
+    updates.push(location ?? FieldValue.delete());
+  }
+  if (modality !== before.modality) {
+    updates.push(new FieldPath("modality"));
+    updates.push(modality);
+  }
+  if (virtualEventUrl !== before.virtualEventUrl) {
+    updates.push(new FieldPath("virtualEventUrl"));
+    updates.push(virtualEventUrl ?? FieldValue.delete());
+  }
+  for (const { id } of linkedEvents) {
+    const eventDoc = db.collection("orgs")
+      .doc(id)
+      .collection("events")
+      .doc(eventId)
+      .withConverter<OrgEvent>(eventConverter);
+    setUpdates(batch, eventDoc, updates);
+  }
 }
 
-export async function removeLinkedEvents(db: Firestore, eventId: string, { linkedEvents }: OrgEvent) {
-  if (!linkedEvents) {
-    return;
-  }
-  await db.runTransaction(async (t) => {
-    for (const { org, event } of linkedEvents) {
-      const eventDoc = db.collection("orgs")
-        .doc(org.id)
-        .collection("events")
-        .doc(event.id)
-        .withConverter<OrgEvent>(eventConverter);
-      const orgEvent = (
-        await t.get(eventDoc)
-      ).data();
-      if (orgEvent) {
-        const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
-        t.update(eventDoc, {
-          linkedEvents: FieldValue.arrayRemove(linkedEvent),
-        });
-      }
-    }
-  });
-}
+// export async function removeLinkedEvents(db: Firestore, eventId: string, { linkedEvents }: OrgEvent) {
+//   if (!linkedEvents) {
+//     return;
+//   }
+//   await db.runTransaction(async (t) => {
+//     for (const { org, event } of linkedEvents) {
+//       const eventDoc = db.collection("orgs")
+//         .doc(org.id)
+//         .collection("events")
+//         .doc(event.id)
+//         .withConverter<OrgEvent>(eventConverter);
+//       const orgEvent = (
+//         await t.get(eventDoc)
+//       ).data();
+//       if (orgEvent) {
+//         const linkedEvent = orgEvent.linkedEvents.find(({ event }) => event.id === eventId);
+//         t.update(eventDoc, {
+//           linkedEvents: FieldValue.arrayRemove(linkedEvent),
+//         });
+//       }
+//     }
+//   });
+// }
 
 function getCode(ch: string) {
   return ch.charCodeAt(0);

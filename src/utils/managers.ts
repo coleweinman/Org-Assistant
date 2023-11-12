@@ -21,7 +21,7 @@ import type {
   AttendeeWithData,
   CheckIn,
   LinkedCheckIn,
-  LinkedEvent,
+  LinkedOrg,
   Org,
   OrgEvent,
   OrgEventWithId,
@@ -107,6 +107,16 @@ const eventWithIdConverter: FirestoreDataConverter<OrgEventWithId> = {
       id: doc.id,
     }
   ),
+};
+
+const linkedOrgConverter: FirestoreDataConverter<LinkedOrg> = {
+  toFirestore: (org: LinkedOrg) => {
+    throw new Error("Illegal operation");
+  },
+  fromFirestore: (doc: DocumentData) => {
+    const { name } = doc.data();
+    return { id: doc.id, name };
+  },
 };
 
 const orgConverter: FirestoreDataConverter<Org> = {
@@ -287,12 +297,16 @@ export function getAttendeeEvents(
   });
 }
 
-export async function getLinkedCheckIns(db: Firestore, linkedEvents: LinkedEvent[]): Promise<LinkedCheckIn[]> {
+export async function getLinkedCheckIns(
+  db: Firestore,
+  eventId: string,
+  linkedEvents: LinkedOrg[],
+): Promise<LinkedCheckIn[]> {
   const checkIns: LinkedCheckIn[] = [];
-  for (const { org, event } of linkedEvents) {
+  for (const { id, name } of linkedEvents) {
     const q = query<LinkedCheckIn>(
-      collection(db, "orgs", org.id, "checkIns").withConverter<LinkedCheckIn>(linkedCheckInConverter(org.name)),
-      where("eventId", "==", event.id),
+      collection(db, "orgs", id, "checkIns").withConverter<LinkedCheckIn>(linkedCheckInConverter(name)),
+      where("eventId", "==", eventId),
     );
     const snapshot = await getDocs<LinkedCheckIn>(q);
     snapshot.forEach((checkInDoc) => checkIns.push(checkInDoc.data()));
@@ -361,6 +375,20 @@ export async function updateEvent(db: Firestore, orgId: string, eventId: string,
   await setDoc(doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter), event);
 }
 
+export async function updateLinkedEvents(
+  db: Firestore,
+  orgId: string,
+  eventId: string,
+  linkedEvents: LinkedOrg[],
+  newOrg: LinkedOrg,
+) {
+  console.log([...linkedEvents, newOrg]);
+  await updateDoc(
+    doc(db, "orgs", orgId, "events", eventId).withConverter<OrgEvent>(eventConverter),
+    { linkedEvents: [...linkedEvents, newOrg] },
+  );
+}
+
 export async function deleteEvent(db: Firestore, orgId: string, eventId: string) {
   const checkInsSnapshot = await getDocs(query(
     collection(db, "orgs", orgId, "checkIns"),
@@ -376,15 +404,22 @@ export async function deleteEvent(db: Firestore, orgId: string, eventId: string)
   await deleteDoc(doc(db, "orgs", orgId, "events", eventId));
 }
 
-export function getOrgs(db: Firestore, uid: string, callback: (events: Org[]) => void) {
+export function getAllOrgs(db: Firestore, excludeOrgs: string[], callback: (orgs: LinkedOrg[]) => void) {
+  // TODO: excludeOrgs is currently limited to 10 orgs
+  const q = query<LinkedOrg>(collection(
+    db, "orgs",
+  ).withConverter<LinkedOrg>(linkedOrgConverter), where("__name__", "not-in", excludeOrgs));
+  return onSnapshot(q, (querySnapshot) => {
+    const orgs: LinkedOrg[] = querySnapshot.docs.map((doc) => doc.data());
+    callback(orgs);
+  });
+}
+
+export function getOrgs(db: Firestore, uid: string, callback: (orgs: Org[]) => void) {
   const q = query<Org>(collection(db, "orgs").withConverter<Org>(orgConverter), where("admins", "array-contains", uid));
   return onSnapshot(q, (querySnapshot) => {
-    const events: Org[] = [];
-    querySnapshot.forEach((doc) => {
-      const data: Org = doc.data();
-      events.push(data);
-    });
-    callback(events);
+    const orgs: Org[] = querySnapshot.docs.map((doc) => doc.data());
+    callback(orgs);
   });
 }
 

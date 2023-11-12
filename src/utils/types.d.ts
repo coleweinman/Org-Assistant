@@ -152,10 +152,7 @@ export type LinkedCheckIn = CheckIn & {
   orgName: string,
 };
 
-export type LinkedEvent = {
-  org: Pick<Org, "id" | "name">,
-  event: Pick<OrgEventWithId, "id" | "name">,
-};
+export type LinkedOrg = Pick<Org, "id" | "name">;
 
 export type OrgEvent = {
   name: string,
@@ -175,7 +172,7 @@ export type OrgEvent = {
   attendeeCount: number,
   checkInPageNote: string,
   rsvpPageNote: string,
-  linkedEvents: LinkedEvent[],
+  linkedEvents: LinkedOrg[],
   checkInRequirements?: CheckInRequirement[],
 };
 
