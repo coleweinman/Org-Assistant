@@ -36,6 +36,9 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
   const title = type === CheckInType.CHECK_IN ? "Check In" : "RSVP";
 
   const onFormSubmit = async (data: FormState<CheckIn | JointCheckIn>): Promise<void | never> => {
+    if (!eventId || !orgId) {
+      return;
+    }
     const checkInData = {
       ...data,
       email: (
@@ -43,21 +46,18 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
       ).toLowerCase(),
       didRsvp: type === CheckInType.RSVP,
       didCheckIn: type === CheckInType.CHECK_IN,
-      eventId: eventId!,
+      eventId,
       timestamp: Timestamp.now(),
     };
     if (joint) {
       const jointCheckIn = checkInData as JointCheckIn;
-      const { org, ...checkIn } = jointCheckIn;
-      const orgEventId = event?.linkedEvents.find((le) => le.org.id === org)?.event.id ?? eventId!;
-      let orgEvent = orgEventId !== eventId ? await getEventOnce(db, org, orgEventId) : event;
-      checkIn.eventId = orgEventId;
+      const { org: selectedOrg, ...checkIn } = jointCheckIn;
+      let orgEvent = selectedOrg !== orgId ? await getEventOnce(db, selectedOrg, eventId) : event;
       for (const { id } of checkInFields as FormFieldType<JointCheckIn>[]) {
         window.localStorage.setItem(id, jointCheckIn[id]?.toString() ?? "");
       }
-      checkIn.eventId = orgEventId;
-      const checkInId = await submitCheckInOrRsvp(db, org, orgEventId!, orgEvent!, checkIn, type!);
-      navigate(`/orgs/${org}/submitted/${checkInId}`);
+      const checkInId = await submitCheckInOrRsvp(db, selectedOrg, eventId, orgEvent!, checkIn, type!);
+      navigate(`/orgs/${selectedOrg}/submitted/${checkInId}`);
     } else {
       const checkIn = checkInData as CheckIn;
       for (const { id } of checkInFields as FormFieldType<CheckIn>[]) {
@@ -70,8 +70,8 @@ const CheckInPage: React.FunctionComponent<CheckInPageProps> = ({ db, joint }) =
 
   const orgs: FormOption[] | null = joint && org && event?.linkedEvents && event.linkedEvents.length > 0
     ? [
-      { id: orgId!, label: org.name }, ...event.linkedEvents.map(({ org }) => (
-        { id: org.id, label: org.name }
+      { id: orgId!, label: org.name }, ...event.linkedEvents.map(({ name, id }) => (
+        { id, label: name }
       )),
     ]
     : null;

@@ -1,4 +1,4 @@
-import { onCall, onRequest } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import {
   onDocumentCreated,
   onDocumentDeleted,
@@ -6,8 +6,8 @@ import {
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { DocumentReference, getFirestore } from "firebase-admin/firestore";
-import { eventConverter, orgConverter } from "./converters";
+import { getFirestore } from "firebase-admin/firestore";
+import { orgConverter } from "./converters";
 import { getAttendeeDoc, getAttendeesCollection, getEventDoc, getEventsCollection } from "./firestoreHelpers";
 import {
   addCalendarEvent,
@@ -20,9 +20,9 @@ import {
   getSeasonId,
   getWasNewAttendee,
   removeFromCalendarList,
-  removeLinkedEvents,
   setUpdates,
   updateCalendarEvent,
+  updateLinkedEventData,
   updateLinkedEvents,
 } from "./helpers";
 import type { Attendee, CheckIn, Org, OrgEvent, PublicOrgEvent } from "./types";
@@ -74,37 +74,62 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
   response.json({ status: "success", data: { events } });
 });
 
-export const linkEvents = onCall<{
-  orgIds: string[],
-  eventRef: DocumentReference<OrgEvent>
-}, Promise<void>>(async (request) => {
-  const { orgIds, eventRef } = request.data;
-  await db.runTransaction(async (t) => {
-    const eventDoc = await t.get(eventRef.withConverter<OrgEvent>(eventConverter));
-    const event = eventDoc.data();
-    if (!event) {
-      return;
-    }
-    const eventDocs = [
-      ...orgIds.map((orgId) => db.collection("orgs").doc(orgId).collection("events").doc()),
-      eventDoc.ref,
-    ];
-    for (let i = 0; i < orgIds.length; i++) {
-      t.set(
-        eventDocs[i],
-        {
-          ...event,
-          rsvpCount: 0,
-          newRsvpCount: 0,
-          newAttendeeCount: 0,
-          attendeeCount: 0,
-          linkedEvents: [...eventDocs.slice(0, i), ...eventDocs.slice(i + 1)],
-        },
-      );
-    }
-    t.update(eventDoc.ref, { linkedEvents: eventDocs.slice(0, eventDocs.length - 1) });
-  });
-});
+// export const fixLinkedEvents = onRequest(async (request, response) => {
+//   response.set("Access-Control-Allow-Origin", "*");
+//
+//   if (request.method === "OPTIONS") {
+//     // Send response to OPTIONS requests
+//     response.set("Access-Control-Allow-Methods", "GET");
+//     response.set("Access-Control-Allow-Headers", "Content-Type");
+//     response.set("Access-Control-Max-Age", "3600");
+//     response.status(204).send("");
+//     return;
+//   }
+//
+//   // const qpp = "xHtVQbaPJrwOFKJ6kJbc";
+//   const abcs = "NjEDMxAW0FhjDIenHuwp";
+//   const hacs = "ZMYZEnNjO7qUf0znlIcQ";
+//
+//   for (const orgId of [abcs, hacs]) {
+//     await db.runTransaction(async (t) => {
+//       const eventsSnapshot = await t.get(db.collection("orgs")
+//         .doc(orgId)
+//         .collection("events")
+//         .where("linkedEvents", "!=", []));
+//       const linkedEventIdMap: Record<string, string> = {};
+//       const linkedEventIds: string[] = [];
+//       eventsSnapshot.forEach((doc) => {
+//         const { linkedEvents } = doc.data();
+//         if (!linkedEvents) {
+//           return;
+//         }
+//         linkedEventIdMap[doc.id] = linkedEvents.find(({ org }: any) => org.name === "Q++").event.id;
+//         linkedEventIds.push(doc.id);
+//       });
+//       console.log("LINKED", linkedEventIdMap);
+//       const checkInsSnapshot = await t.get(db.collection("orgs")
+//         .doc(orgId)
+//         .collection("checkIns")
+//         .where("eventId", "in", linkedEventIds));
+//       checkInsSnapshot.forEach((doc) => {
+//         t.update(doc.ref, { eventId: linkedEventIdMap[doc.data().eventId] });
+//       });
+//       eventsSnapshot.forEach((doc) => {
+//         const { linkedEvents } = doc.data();
+//         if (!linkedEvents) {
+//           return;
+//         }
+//         const newData = doc.data();
+//         newData.linkedEvents = newData.linkedEvents.map(({ org }: any) => (
+//           { name: org.name, id: org.id }
+//         ));
+//         t.set(db.collection("orgs").doc(orgId).collection("events").doc(linkedEventIdMap[doc.id]), newData);
+//         t.delete(doc.ref);
+//       });
+//     });
+//   }
+//   response.json({ status: "success" });
+// });
 
 export const updateSharedCalendar = onDocumentWritten("orgs/{orgId}", async ({ data }) => {
   if (!data) {
@@ -145,11 +170,11 @@ export const onCreateEvent = onDocumentCreated("orgs/{orgId}/events/{eventId}", 
     error("No data associated with the event");
     return;
   }
-  try {
-    await addCalendarEvent(db, params.orgId, data);
-  } catch (e) {
-    error(`Failed to create event ${data.id} with error: `, e);
-  }
+  await Promise.all([
+    addCalendarEvent(db, params.orgId, data).catch((e) => error(`Failed to create event ${data.id} with error: `, e)),
+    updateLinkedEvents(db, params.orgId, params.eventId, data.data() as OrgEvent)
+      .catch((e) => error(`Failed to link events with ${data.id}: `, e)),
+  ]);
 });
 
 export const onUpdateEvent = onDocumentUpdated("orgs/{orgId}/events/{eventId}", async ({ params, data }) => {
@@ -157,13 +182,13 @@ export const onUpdateEvent = onDocumentUpdated("orgs/{orgId}/events/{eventId}", 
     error("No data associated with the event");
     return;
   }
+  const before = data.before.data() as OrgEvent;
+  const after = data.after.data() as OrgEvent;
   await Promise.all([
-    updateLinkedEvents(
-      db,
-      params.eventId,
-      data.before.data() as OrgEvent,
-      data.after.data() as OrgEvent,
-    ).catch((e) => error(`Failed to updated linked events for ${data.after.id} with error: `, e)),
+    updateLinkedEventData(db, params.eventId, before, after)
+      .catch((e) => error(`Failed to updated linked events data for ${data.after.id} with error: `, e)),
+    updateLinkedEvents(db, params.orgId, params.eventId, after, before.linkedEvents)
+      .catch((e) => error(`Failed to updated linked events for ${data.after.id} with error: `, e)),
     updateCalendarEvent(db, params.orgId, data.after)
       .catch((e) => error(`Failed to update event ${data.after.id} with error: `, e)),
   ]);
@@ -174,12 +199,10 @@ export const onDeleteEvent = onDocumentDeleted("orgs/{orgId}/events/{eventId}", 
     error("No data associated with the event");
     return;
   }
+  const { linkedEvents, ...event } = data.data() as OrgEvent;
   await Promise.all([
-    removeLinkedEvents(
-      db,
-      params.eventId,
-      data.data() as OrgEvent,
-    ).catch((e) => error(`Failed to delete linked events for ${params.eventId} with error: `, e)),
+    updateLinkedEvents(db, params.orgId, params.eventId, { ...event, linkedEvents: [] }, linkedEvents, true)
+      .catch((e) => error(`Failed to delete linked events for ${data.id} with error: `, e)),
     deleteCalendarEvent(db, params.orgId, params.eventId)
       .catch((e) => error(`Failed to delete event ${params.eventId} with error: `, e)),
   ]);

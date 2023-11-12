@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, type Unsubscribe } from "firebase/firestore";
 import dayjs, { Dayjs } from "dayjs";
 import { DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./staticConstants";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -15,7 +15,7 @@ import type {
   FormState,
   FormValue,
   HeaderTransform,
-  LinkedEvent,
+  LinkedOrg,
   MultiOptionsFieldType,
   OrgEvent,
   OrgEventWithoutLinked,
@@ -82,6 +82,12 @@ export function getAuthErrorMessage(e: AuthError): string {
     default:
       return "Something went wrong. Please try again later.";
   }
+}
+
+export function executeAllUnsubs(...args: Unsubscribe[]): () => void {
+  return () => {
+    args.forEach((unsub) => unsub());
+  };
 }
 
 //////////////////
@@ -219,7 +225,7 @@ function dayjsToTimestamp(date: Dayjs): Timestamp {
 export function getOrgEventFromFormState(
   seasonId: string,
   state: FormState<OrgEventWithoutLinked>,
-  linkedEvents: LinkedEvent[] = [],
+  linkedEvents: LinkedOrg[] = [],
   newRsvpCount: number = 0,
   rsvpCount: number = 0,
   newAttendeeCount: number = 0,
