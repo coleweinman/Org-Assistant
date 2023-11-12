@@ -74,63 +74,6 @@ export const getEvents = onRequest({ cors: ["texasqpp.com"] }, async (request, r
   response.json({ status: "success", data: { events } });
 });
 
-// export const fixLinkedEvents = onRequest(async (request, response) => {
-//   response.set("Access-Control-Allow-Origin", "*");
-//
-//   if (request.method === "OPTIONS") {
-//     // Send response to OPTIONS requests
-//     response.set("Access-Control-Allow-Methods", "GET");
-//     response.set("Access-Control-Allow-Headers", "Content-Type");
-//     response.set("Access-Control-Max-Age", "3600");
-//     response.status(204).send("");
-//     return;
-//   }
-//
-//   // const qpp = "xHtVQbaPJrwOFKJ6kJbc";
-//   const abcs = "NjEDMxAW0FhjDIenHuwp";
-//   const hacs = "ZMYZEnNjO7qUf0znlIcQ";
-//
-//   for (const orgId of [abcs, hacs]) {
-//     await db.runTransaction(async (t) => {
-//       const eventsSnapshot = await t.get(db.collection("orgs")
-//         .doc(orgId)
-//         .collection("events")
-//         .where("linkedEvents", "!=", []));
-//       const linkedEventIdMap: Record<string, string> = {};
-//       const linkedEventIds: string[] = [];
-//       eventsSnapshot.forEach((doc) => {
-//         const { linkedEvents } = doc.data();
-//         if (!linkedEvents) {
-//           return;
-//         }
-//         linkedEventIdMap[doc.id] = linkedEvents.find(({ org }: any) => org.name === "Q++").event.id;
-//         linkedEventIds.push(doc.id);
-//       });
-//       console.log("LINKED", linkedEventIdMap);
-//       const checkInsSnapshot = await t.get(db.collection("orgs")
-//         .doc(orgId)
-//         .collection("checkIns")
-//         .where("eventId", "in", linkedEventIds));
-//       checkInsSnapshot.forEach((doc) => {
-//         t.update(doc.ref, { eventId: linkedEventIdMap[doc.data().eventId] });
-//       });
-//       eventsSnapshot.forEach((doc) => {
-//         const { linkedEvents } = doc.data();
-//         if (!linkedEvents) {
-//           return;
-//         }
-//         const newData = doc.data();
-//         newData.linkedEvents = newData.linkedEvents.map(({ org }: any) => (
-//           { name: org.name, id: org.id }
-//         ));
-//         t.set(db.collection("orgs").doc(orgId).collection("events").doc(linkedEventIdMap[doc.id]), newData);
-//         t.delete(doc.ref);
-//       });
-//     });
-//   }
-//   response.json({ status: "success" });
-// });
-
 export const updateSharedCalendar = onDocumentWritten("orgs/{orgId}", async ({ data }) => {
   if (!data) {
     error("No data associated with org");
