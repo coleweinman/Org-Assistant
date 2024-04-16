@@ -58,9 +58,9 @@ export const CHECK_IN_REQUIREMENTS: Record<CheckInRequirement, {
   },
   [CheckInRequirement.REQUIRE_ACTIVE]: {
     meetsCondition: (_, attendee: Attendee | null) => (
-      attendee && attendee.totalEventsAttended > 0
+      attendee && attendee.totalEventsAttended >= 3
     ) ?? false,
-    errorMessage: "This event requires that you be an active member of the org",
+    errorMessage: "This event requires that you have attended 3 or more events this season",
   },
 };
 
