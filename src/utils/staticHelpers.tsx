@@ -44,7 +44,7 @@ dayjs.extend(timezone);
 dayjs.tz.setDefault(TIMEZONE);
 
 function timestampToDayjs(timestamp: Timestamp): Dayjs {
-  return dayjs(timestamp.toMillis());
+  return dayjs(timestamp.toMillis()).tz(TIMEZONE);
 }
 
 function dayjsToTimestamp(date: Dayjs): Timestamp {
