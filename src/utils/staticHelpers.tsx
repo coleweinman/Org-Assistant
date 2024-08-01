@@ -2,9 +2,11 @@ import type { ReactElement } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Timestamp, type Unsubscribe } from "firebase/firestore";
 import dayjs, { Dayjs } from "dayjs";
-import { DATE_FORMAT, EMAIL_REGEX, URL_REGEX } from "./staticConstants";
+import { DATE_FORMAT, EMAIL_REGEX, INPUT_DATE_FORMAT, TIMEZONE, URL_REGEX } from "./staticConstants";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import timezone from "dayjs/plugin/timezone";
+import utc from 'dayjs/plugin/utc';
 import { AuthError, AuthErrorCodes } from "firebase/auth";
 import type {
   ColumnData,
@@ -36,15 +38,31 @@ import { FilterMeta } from "@tanstack/table-core/src/types";
 
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrAfter);
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+dayjs.tz.setDefault(TIMEZONE);
+
+function timestampToDayjs(timestamp: Timestamp): Dayjs {
+  return dayjs(timestamp.toMillis()).tz(TIMEZONE);
+}
+
+function dayjsToTimestamp(date: Dayjs): Timestamp {
+  return Timestamp.fromMillis(date.valueOf());
+}
 
 export function timestampToDate(timestamp?: Timestamp): string {
   return timestamp
-    ? dayjs(timestamp.toMillis()).format(DATE_FORMAT)
+    ? timestampToDayjs(timestamp).format(DATE_FORMAT)
     : "";
 }
 
 export function dateStringToTimestamp(dateStr: string): Timestamp {
-  return Timestamp.fromDate(dayjs(dateStr, DATE_FORMAT).toDate());
+  return Timestamp.fromDate(dayjs(dateStr, DATE_FORMAT).tz(TIMEZONE, true).toDate());
+}
+
+export function rawDateToDayjs(rawDate: string): Dayjs {
+  return dayjs(rawDate, [DATE_FORMAT, INPUT_DATE_FORMAT]).tz(TIMEZONE, true);
 }
 
 /////////////////
@@ -142,9 +160,7 @@ export function convertInitialToFormData<T extends FormDataType>(
   const formData: FormState<T> = {};
   for (const { inputType, id } of fields) {
     if (inputType === InputType.DATE && initial[id]) {
-      formData[id] = dayjs((
-        initial[id] as Timestamp
-      ).toDate());
+      formData[id] = timestampToDayjs(initial[id] as Timestamp);
     } else {
       // @ts-ignore
       formData[id] = initial[id];
@@ -216,10 +232,6 @@ export function isValidUrl(text: string) {
 
 export function isValidDate(date: Dayjs) {
   return date.isSameOrAfter(dayjs(), "day");
-}
-
-function dayjsToTimestamp(date: Dayjs): Timestamp {
-  return Timestamp.fromMillis(date.valueOf());
 }
 
 export function getOrgEventFromFormState(

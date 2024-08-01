@@ -1,7 +1,8 @@
 import React, { FocusEventHandler, HTMLProps } from "react";
 import { InputType } from "../utils/enums";
 import dayjs, { Dayjs } from "dayjs";
-import { DATE_FORMAT, INPUT_DATE_FORMAT } from "../utils/staticConstants";
+import { DATE_FORMAT, TIMEZONE } from "../utils/staticConstants";
+import { rawDateToDayjs } from "../utils/staticHelpers";
 
 type DateTimePickerProps = Omit<HTMLProps<HTMLInputElement>, "value" | "onChange"> & {
   value: Dayjs | null,
@@ -17,8 +18,8 @@ const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({
   const [rawValue, setRawValue] = React.useState<string>("");
 
   const validate: FocusEventHandler<HTMLInputElement> = () => {
-    let date = dayjs(rawValue, [DATE_FORMAT, INPUT_DATE_FORMAT]);
-    const today = dayjs();
+    let date = rawDateToDayjs(rawValue);
+    const today = dayjs().tz(TIMEZONE);
     if (date.isBefore(today, "years")) {
       date = date.year(today.year());
     }
