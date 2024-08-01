@@ -19,14 +19,16 @@ const DateTimePicker: React.FunctionComponent<DateTimePickerProps> = ({
 
   const validate: FocusEventHandler<HTMLInputElement> = () => {
     let date = rawDateToDayjs(rawValue);
-    const today = dayjs().tz(TIMEZONE);
-    if (date.isBefore(today, "years")) {
-      date = date.year(today.year());
+    if (date) {
+      const today = dayjs().tz(TIMEZONE);
+      if (date.isBefore(today, "years")) {
+        date = date.year(today.year());
+      }
+      if (date.isBefore(today, "years")) {
+        date = date.add(1, "year");
+      }
     }
-    if (date.isBefore(today, "years")) {
-      date = date.add(1, "year");
-    }
-    onChange(date.isValid() ? date : null);
+    onChange(date?.isValid() ? date : null);
   };
 
   React.useEffect(() => {

@@ -20,6 +20,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.11.47",
+    "any-date-parser": "^1.5.4",
     "axios": "^1.6.0",
     "babel-plugin-macros": "^3.1.0",
     "dayjs": "^1.11.5",

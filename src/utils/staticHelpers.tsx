@@ -2,11 +2,13 @@ import type { ReactElement } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Timestamp, type Unsubscribe } from "firebase/firestore";
 import dayjs, { Dayjs } from "dayjs";
-import { DATE_FORMAT, EMAIL_REGEX, INPUT_DATE_FORMAT, TIMEZONE, URL_REGEX } from "./staticConstants";
+import { DATE_FORMAT, EMAIL_REGEX, TIMEZONE, URL_REGEX } from "./staticConstants";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import timezone from "dayjs/plugin/timezone";
-import utc from 'dayjs/plugin/utc';
+import utc from "dayjs/plugin/utc";
+import objectSupport from "dayjs/plugin/objectSupport";
+import parser from "any-date-parser";
 import { AuthError, AuthErrorCodes } from "firebase/auth";
 import type {
   ColumnData,
@@ -40,6 +42,7 @@ dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(objectSupport);
 
 dayjs.tz.setDefault(TIMEZONE);
 
@@ -61,8 +64,11 @@ export function dateStringToTimestamp(dateStr: string): Timestamp {
   return Timestamp.fromDate(dayjs(dateStr, DATE_FORMAT).tz(TIMEZONE, true).toDate());
 }
 
-export function rawDateToDayjs(rawDate: string): Dayjs {
-  return dayjs(rawDate, [DATE_FORMAT, INPUT_DATE_FORMAT]).tz(TIMEZONE, true);
+export function rawDateToDayjs(rawDate: string): Dayjs | null {
+  if (rawDate.trim().length === 0) {
+    return null;
+  }
+  return dayjs(parser.attempt(rawDate)).subtract({ month: 1 }).tz(TIMEZONE, true);
 }
 
 /////////////////
