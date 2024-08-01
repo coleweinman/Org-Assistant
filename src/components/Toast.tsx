@@ -29,6 +29,7 @@ const Toast: React.FunctionComponent<ToastProps> = ({ message, clearMessage, ico
       const timeout = setTimeout(() => setDisplayMessage(null), TOAST_TRANSITION_TIME);
       setMessageTimeout(timeout);
     }
+    // eslint-disable-next-line
   }, [message, clearMessage]);
 
   return (
