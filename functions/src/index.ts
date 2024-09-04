@@ -173,15 +173,15 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
     }
 
     // Update attendee data or create new attendee doc if new
-    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, schoolId);
     const isNewAttendee = !attendeeDoc;
     const attendeeRef = isNewAttendee ? getAttendeesCollection(db, orgId).doc() : attendeeDoc.ref;
     let attendee: Attendee;
     if (isNewAttendee) {
       attendee = {
         name: "",
-        email: email.toLowerCase(),
-        schoolId: "",
+        email: "",
+        schoolId: schoolId.toLowerCase(),
         discord: "",
         year: "",
         // Default values, to be updated below
@@ -201,7 +201,7 @@ export const onCreateCheckIn = onDocumentCreated("orgs/{orgId}/checkIns/{checkIn
     }
 
     setUpdates(t, attendeeRef,
-      getAttendeeAddUpdates(didRsvp, didCheckIn, name, schoolId, discord ?? "", seasonId, attendee),
+      getAttendeeAddUpdates(didRsvp, didCheckIn, name, email, discord ?? "", seasonId, attendee),
     );
     setUpdates(t, getEventDoc(db, orgId, eventId), getEventAddUpdates(didRsvp, didCheckIn, isNewAttendee));
   });
@@ -223,7 +223,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     }
 
     // Update attendee data
-    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, schoolId);
     if (!attendeeDoc) {
       error("Could not find attendee associated with check in");
       return;
@@ -242,7 +242,7 @@ export const onEditCheckIn = onDocumentUpdated("orgs/{orgId}/checkIns/{checkInId
     }
 
     const attendeeUpdates = [
-      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, schoolId, discord ?? "", seasonId, attendee),
+      ...getAttendeeAddUpdates(addRsvp, addCheckIn, name, email, discord ?? "", seasonId, attendee),
       ...getAttendeeRemoveUpdates(removeRsvp, removeCheckIn, seasonId, attendee),
     ];
     const eventUpdates = [
@@ -259,7 +259,7 @@ export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkIn
     error("No data associated with the event");
     return;
   }
-  const { email, eventId, didCheckIn, didRsvp } = data.data() as CheckIn;
+  const { schoolId, eventId, didCheckIn, didRsvp } = data.data() as CheckIn;
   const { orgId } = params;
 
   await db.runTransaction(async (t) => {
@@ -269,7 +269,7 @@ export const onDeleteCheckIn = onDocumentDeleted("orgs/{orgId}/checkIns/{checkIn
     }
 
     // Update attendee data
-    const attendeeDoc = await getAttendeeDoc(t, db, orgId, email);
+    const attendeeDoc = await getAttendeeDoc(t, db, orgId, schoolId);
     if (!attendeeDoc) {
       return;
     }

@@ -43,9 +43,10 @@ export async function getAttendeeDoc(
   t: Transaction,
   db: Firestore,
   orgId: string,
-  email: string,
+  schoolId: string,
 ): Promise<QueryDocumentSnapshot<Attendee> | null> {
-  const attendeeSnapshot = await t.get(getAttendeesCollection(db, orgId).where("email", "==", email.toLowerCase()));
+  const attendeeSnapshot = await t.get(getAttendeesCollection(db, orgId)
+    .where("schoolId", "==", schoolId.toLowerCase()));
   if (attendeeSnapshot.empty) {
     console.error("Could not find attendee associated with check in");
     return null;
