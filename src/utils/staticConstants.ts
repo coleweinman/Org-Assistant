@@ -16,11 +16,11 @@ export const GAY_FLAG_COLORS = ["#078d70", "#26Ceaa", "#98e8c1", "#7bade2", "#50
 export const TRANS_FLAG_COLORS = ["#5bcefa", "#f5a9b8"];
 
 export const YEAR_OPTIONS: FormOption[] = [
-  { id: "2027", label: "Freshman" },
-  { id: "2026", label: "Sophomore" },
-  { id: "2025", label: "Junior" },
-  { id: "2024", label: "Senior" },
-  { id: "2023", label: "Super senior" },
+  { id: "2028", label: "Freshman" },
+  { id: "2027", label: "Sophomore" },
+  { id: "2026", label: "Junior" },
+  { id: "2025", label: "Senior" },
+  { id: "2024", label: "Super senior" },
   { id: "grad", label: "Grad student" },
 ];
 
