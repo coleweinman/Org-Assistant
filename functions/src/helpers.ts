@@ -70,7 +70,7 @@ export function getAttendeeAddUpdates(
   rsvp: boolean,
   checkIn: boolean,
   name: string,
-  schoolId: string,
+  email: string,
   discord: string,
   seasonId: string,
   { lastActiveSeasonId }: Attendee,
@@ -88,7 +88,7 @@ export function getAttendeeAddUpdates(
   ] : [];
   return [
     new FieldPath("name"), name,
-    new FieldPath("schoolId"), schoolId,
+    new FieldPath("email"), email,
     new FieldPath("discord"), discord,
     ...seasonIdUpdates,
     ...rsvpUpdates,
